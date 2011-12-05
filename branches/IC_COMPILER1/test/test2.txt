@@ -1,3 +1,0 @@
-/*check lexical error*/
-
-int a = 2147483649
