@@ -9,6 +9,7 @@ public class Compiler {
     try {
         FileReader txtFile = new FileReader(args[0]);
         Lexer scanner = new Lexer(txtFile);
+        parser p = new parser(scanner);
         do {
             currToken = scanner.next_token();
             System.out.println(currToken);
