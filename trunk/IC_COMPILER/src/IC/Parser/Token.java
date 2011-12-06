@@ -18,12 +18,20 @@ public class Token extends Symbol {
 		this.val = true;
 	}
 
+//	public String toString() {
+//		if (val)
+//			return this.line + ": " + IC.Parser.sym.names[this.sym] + "("
+//					+ this.value.toString() + ")";
+//		else
+//			return this.line + ": " + IC.Parser.sym.names[this.sym];
+//	}
+	
 	public String toString() {
-		if (val)
-			return this.line + ": " + IC.Parser.sym.names[this.sym] + "("
-					+ this.value.toString() + ")";
-		else
-			return this.line + ": " + IC.Parser.sym.names[this.sym];
-	}
+	if (val)
+		return this.line + ": " + this.sym + "("
+				+ this.value.toString() + ")";
+	else
+		return this.line + ": " + this.sym;
+}
 	
 }

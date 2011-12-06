@@ -1,6 +1,7 @@
 package IC.Parser;
 
 import IC.AST.*;
+import IC.DataTypes;
 import java_cup.runtime.*;
 import java.util.List;
 import java.util.LinkedList;
@@ -8,11 +9,15 @@ import java.util.LinkedList;
 ////////////////////////////////////////////
 // Symbol list (terminals and non-terminals)
 
-terminal CLASS,CLASS_ID,LCBR,RCBR,STATIC,INT,BOOLEAN,STRING,VOID,ID,LP,RP,LB,RB,SEMI,COMMA;
+terminal ASSIGN,BOOLEAN,BREAK,CLASS,CONTINUE,DIVIDE,DOT,EQUAL,EXTENDS,ELSE,FALSE,COMMA,GT,GTE,IF,INT,LAND,LB,LP,LCBR,LENGTH,NEW,LNEG,LOR,LT,LTE,MINUS,MOD,MULTIPLY,NEQUAL,NULL,PLUS,RB,RCBR,RETURN,RP,SEMI,STATIC,STRING,THIS,TRUE,VOID,WHILE;
+terminal String CLASS_ID;
+terminal String ID;
+terminal Integer INTEGER;
+terminal String QUOTE;
 
 non terminal ICClass libic;
 non terminal LibraryMethod libmethod;
-non terminal List<LibraryMethod> libmethod_list;
+non terminal List<Method> libmethod_list;
 non terminal Formal formal;
 non terminal List<Formal> formal_list;
 non terminal Type type;
@@ -31,17 +36,17 @@ libic ::= CLASS CLASS_ID:class_id LCBR libmethod_list:lm_list RCBR
 				RESULT = new ICClass(class_idleft,class_id,new LinkedList<Field>(),lm_list); 
 			:};
 
-type ::= INT:int
-			{: RESULT = new PrimitiveType(intleft,DataTypes.INT); :}
-		| STRING:string
-			{: RESULT = new PrimitiveType(stringleft,DataTypes.STRING); :}
-		| BOOLEAN:boolean
-			{: RESULT = new PrimitiveType(booleanleft,DataTypes.BOOLEAN); :}
+type ::= INT:integ
+			{: RESULT = new PrimitiveType(integleft,DataTypes.INT); :}
+		| STRING:str
+			{: RESULT = new PrimitiveType(strleft,DataTypes.STRING); :}
+		| BOOLEAN:bool
+			{: RESULT = new PrimitiveType(boolleft,DataTypes.BOOLEAN); :}
 		| CLASS_ID:class_id
 			{: RESULT = new UserType(class_idleft,class_id); :}
 		| type:t LB RB
 			{:	t.incrementDimension();
-				RESULT = t :};
+				RESULT = t; :};
 			
 formal ::= type:t ID:id
 			{:
@@ -55,7 +60,7 @@ formal_list ::= formal:f
 			:}
 			| formal_list:f1 COMMA formal:f
 			{:	
-				fl.add(f);
+				f1.add(f);
 				RESULT = f1;
 			:};			
 
@@ -78,7 +83,7 @@ libmethod ::= STATIC VOID ID:id LP RP SEMI
 
 libmethod_list ::= libmethod:lm
 			{: 	
-				RESULT = new LinkedList<LibraryMethod>(); 
+				RESULT = new LinkedList<Method>(); 
 				RESULT.add(lm);
 			:}
 			| libmethod_list:l1 libmethod:lm
