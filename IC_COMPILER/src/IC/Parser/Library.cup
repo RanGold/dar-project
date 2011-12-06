@@ -1,3 +1,88 @@
 package IC.Parser;
 
 import IC.AST.*;
+import java_cup.runtime.*;
+import java.util.List;
+import java.util.LinkedList;
+
+////////////////////////////////////////////
+// Symbol list (terminals and non-terminals)
+
+terminal CLASS,CLASS_ID,LCBR,RCBR,STATIC,INT,BOOLEAN,STRING,VOID,ID,LP,RP,LB,RB,SEMI,COMMA;
+
+non terminal ICClass libic;
+non terminal LibraryMethod libmethod;
+non terminal List<LibraryMethod> libmethod_list;
+non terminal Formal formal;
+non terminal List<Formal> formal_list;
+non terminal Type type;
+
+//////////////////////////
+// Precedence declarations
+
+precedence left LP, RP, LB, RB;
+
+//////////////
+// The grammar
+
+libic ::= CLASS CLASS_ID:class_id LCBR libmethod_list:lm_list RCBR
+			{: 	
+				if (class_id.compareTo("Library")!=0) throw new SyntaxError("Illegal library class name",class_idleft);
+				RESULT = new ICClass(class_idleft,class_id,new LinkedList<Field>(),lm_list); 
+			:};
+
+type ::= INT:int
+			{: RESULT = new PrimitiveType(intleft,DataTypes.INT); :}
+		| STRING:string
+			{: RESULT = new PrimitiveType(stringleft,DataTypes.STRING); :}
+		| BOOLEAN:boolean
+			{: RESULT = new PrimitiveType(booleanleft,DataTypes.BOOLEAN); :}
+		| CLASS_ID:class_id
+			{: RESULT = new UserType(class_idleft,class_id); :}
+		| type:t LB RB
+			{:	t.incrementDimension();
+				RESULT = t :};
+			
+formal ::= type:t ID:id
+			{:
+				RESULT = new Formal(t,id);
+			:};
+
+formal_list ::= formal:f
+			{: 	
+				RESULT = new LinkedList<Formal>(); 
+				RESULT.add(f);
+			:}
+			| formal_list:f1 COMMA formal:f
+			{:	
+				fl.add(f);
+				RESULT = f1;
+			:};			
+
+libmethod ::= STATIC VOID ID:id LP RP SEMI
+			{:
+				RESULT=new LibraryMethod(new PrimitiveType(idleft,DataTypes.VOID),id,new LinkedList<Formal>());
+			:}
+			| STATIC type:t ID:id LP RP SEMI
+			{:
+				RESULT=new LibraryMethod(t,id,new LinkedList<Formal>());
+			:}	
+			| STATIC VOID ID:id LP formal_list:fl RP SEMI
+			{:
+				RESULT=new LibraryMethod(new PrimitiveType(idleft,DataTypes.VOID),id,fl);
+			:}
+			| STATIC type:t ID:id LP formal_list:fl RP SEMI
+			{:
+				RESULT=new LibraryMethod(t,id,fl);
+			:};
+
+libmethod_list ::= libmethod:lm
+			{: 	
+				RESULT = new LinkedList<LibraryMethod>(); 
+				RESULT.add(lm);
+			:}
+			| libmethod_list:l1 libmethod:lm
+			{:	
+				l1.add(lm);
+				RESULT = l1;
+			:};
