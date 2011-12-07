@@ -58,10 +58,10 @@ formal_list ::= formal:f
 				RESULT = new LinkedList<Formal>(); 
 				RESULT.add(f);
 			:}
-			| formal_list:f1 COMMA formal:f
+			| formal_list:fl COMMA formal:f
 			{:	
-				f1.add(f);
-				RESULT = f1;
+				fl.add(f);
+				RESULT = fl;
 			:};			
 
 libmethod ::= STATIC VOID ID:id LP RP SEMI
@@ -86,8 +86,8 @@ libmethod_list ::= libmethod:lm
 				RESULT = new LinkedList<Method>(); 
 				RESULT.add(lm);
 			:}
-			| libmethod_list:l1 libmethod:lm
+			| libmethod_list:lml libmethod:lm
 			{:	
-				l1.add(lm);
-				RESULT = l1;
+				lml.add(lm);
+				RESULT = lml;
 			:};
