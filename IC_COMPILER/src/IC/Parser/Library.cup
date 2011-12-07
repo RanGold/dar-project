@@ -32,21 +32,23 @@ precedence left LP, RP, LB, RB;
 
 libic ::= CLASS CLASS_ID:class_id LCBR libmethod_list:lm_list RCBR
 			{: 	
-				if (class_id.compareTo("Library")!=0) throw new SyntaxError("Illegal library class name",class_idleft);
+				if (class_id.compareTo("Library") != 0) throw new SyntaxError("Illegal library class name",class_idleft);
 				RESULT = new ICClass(class_idleft,class_id,new LinkedList<Field>(),lm_list); 
 			:};
 
 type ::= INT:integ
-			{: RESULT = new PrimitiveType(integleft,DataTypes.INT); :}
+			{: RESULT = new PrimitiveType(integleft, DataTypes.INT); :}
 		| STRING:str
-			{: RESULT = new PrimitiveType(strleft,DataTypes.STRING); :}
+			{: RESULT = new PrimitiveType(strleft, DataTypes.STRING); :}
 		| BOOLEAN:bool
-			{: RESULT = new PrimitiveType(boolleft,DataTypes.BOOLEAN); :}
+			{: RESULT = new PrimitiveType(boolleft, DataTypes.BOOLEAN); :}
 		| CLASS_ID:class_id
-			{: RESULT = new UserType(class_idleft,class_id); :}
+			{: RESULT = new UserType(class_idleft, class_id); :}
 		| type:t LB RB
-			{:	t.incrementDimension();
-				RESULT = t; :};
+			{:	
+				t.incrementDimension();
+				RESULT = t; 
+			:};
 			
 formal ::= type:t ID:id
 			{:
@@ -62,7 +64,7 @@ formal_list ::= formal:f
 			{:	
 				fl.add(f);
 				RESULT = fl;
-			:};			
+			:};
 
 libmethod ::= STATIC VOID ID:id LP RP SEMI
 			{:
