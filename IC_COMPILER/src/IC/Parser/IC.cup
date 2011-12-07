@@ -40,7 +40,7 @@ program ::= class_list:cl
 			{: RESULT = new Program(cl); :};
 			
 class_list ::= class_decl:cd
-			{: 
+		{: 
 				RESULT = new LinkedList<ICClass>();
 				RESULT.add(cd);
 			:}
