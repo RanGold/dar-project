@@ -5,7 +5,7 @@
     Compiler build file
   =======================================================================
 -->
-<project name="IC Compiler" default="build" basedir=".">
+<project name="IC_Compiler" default="build" basedir=".">
     <!-- Set global properties for this build -->
     <property name="src" value="src"/>
     <property name="src.test" value="test"/>

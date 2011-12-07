@@ -18,10 +18,10 @@ package IC.Parser;
 %}
 
 %eofval{
-	if (yystate()==QUOTE) throw new LexicalError("Missing end of quote",yyline,null);
-	if (yystate()==COMMENT2)  throw new LexicalError("Missing end of comment",yyline,null);
+	if (yystate() == QUOTE) throw new LexicalError("Missing end of quote", yyline, null);
+	if (yystate() == COMMENT2) throw new LexicalError("Missing end of comment", yyline, null);
 	
-  	return new Token(sym.EOF,yyline);
+  	return new Token(sym.EOF, yyline);
 %eofval}
 
 %%
