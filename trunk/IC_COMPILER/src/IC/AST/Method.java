@@ -7,11 +7,7 @@ import java.util.List;
  * 
  * @author Tovi Almozlino
  */
-public abstract class Method extends ASTNode {
-
-	protected Type type;
-
-	protected String name;
+public abstract class Method extends FieldOrMethod {
 
 	protected List<Formal> formals;
 
@@ -31,19 +27,9 @@ public abstract class Method extends ASTNode {
 	 */
 	protected Method(Type type, String name, List<Formal> formals,
 			List<Statement> statements) {
-		super(type.getLine());
-		this.type = type;
-		this.name = name;
+		super(type, name);
 		this.formals = formals;
 		this.statements = statements;
-	}
-
-	public Type getType() {
-		return type;
-	}
-
-	public String getName() {
-		return name;
 	}
 
 	public List<Formal> getFormals() {

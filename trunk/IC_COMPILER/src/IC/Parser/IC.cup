@@ -1,14 +1,29 @@
 package IC.Parser;
 
 import IC.AST.*;
+import IC.DataTypes;
+import java_cup.runtime.*;
+import java.util.List;
+import java.util.LinkedList;
 
 ////////////////////////////////////////////
 // Symbol list (terminals and non-terminals)
 
-nonterminal Program Program;
-
-terminal         ASSIGN;
+terminal ASSIGN,BOOLEAN,BREAK,CLASS,CONTINUE,DIVIDE,DOT,EQUAL,EXTENDS,ELSE,FALSE,COMMA,GT,GTE,IF,INT,LAND,LB,LP,LCBR,LENGTH,NEW,LNEG,LOR,LT,LTE,MINUS,MOD,MULTIPLY,NEQUAL,NULL,PLUS,RB,RCBR,RETURN,RP,SEMI,STATIC,STRING,THIS,TRUE,VOID,WHILE;
+terminal String CLASS_ID;
+terminal String ID;
 terminal Integer INTEGER;
+terminal String QUOTE;
+
+non terminal Program program;
+non terminal List<ICClass> class_list;
+non terminal ICClass class_decl;
+non terminal List<Field> field_list;
+non terminal Method method;
+non terminal List<FieldOrMethod> field_or_method_list; 
+non terminal List<String> id_list;
+non terminal List<Statemnt> statement_list;
+non terminal Literal literal
 
 //////////////////////////
 // Precedence declarations
@@ -16,4 +31,142 @@ terminal Integer INTEGER;
 //////////////
 // The grammar
 
-Literal ::= INTEGER | NULL;
+program ::= class_list:cl
+			{: RESULT = new Program(cl); :};
+			
+class_list ::= class_decl:cd
+			{: 
+				RESULT = new LinkedList<ICClass>();
+				RESULT.add(cd);
+			:}
+			| class_list:cl class_decl:cd
+			{:
+				cl.getClasses().add(cd);
+				RESULT = cl;
+			:};
+
+class_decl ::= CLASS CLASS_ID:cid LCBR RCBR
+			{: RESULT = new ICClass(cidleft, cid, new LinkedList<Field>(), new LinkedList<Method>()); :}
+			| CLASS CLASS_ID:cid LCBR field_or_method_list:foml RCBR
+			{: RESULT = new ICClass(cidleft, cid, FieldOrMethod.getFields(foml), FieldOrMethod.getMethods(foml)); :}
+			| CLASS CLASS_ID:cid EXTENDS CLASS_ID:bid LCBR RCBR
+			{: RESULT = new ICClass(cidleft, cid, bid, new LinkedList<Field>(), new LinkedList<Method>()); :}
+			| CLASS CLASS_ID:cid EXTENDS CLASS_ID:bid LCBR field_or_method_list:foml RCBR
+			{: RESULT = new ICClass(cidleft, cid, bid, FieldOrMethod.getFields(foml), FieldOrMethod.getMethods(foml)); :};
+			
+field_or_method_list ::= field_list:fl
+						{:
+							RESULT = new LinkedList<FieldOrMethod>();
+							RESULT.addAll(fl);
+						:}
+						| method_list:m
+						{:
+							RESULT = new LinkedList<FieldOrMethod>();
+							RESULT.add(m);
+						:}
+						| field_or_method_list:foml field_list:fl
+						{:
+							foml.addAll(fl);
+							RESULT = foml;
+						:}
+						| field_or_method_list:foml method:m
+						{:
+							foml.add(m);
+							RESULT = foml;
+						:};
+						
+field_list ::= type id_list:idl SEMI
+			{: 
+				RESULT = new LinkedList<Field>();
+				for (String s : idl) {
+					RESULT.add(new Field(type, s);
+				}
+			:};
+
+id_list ::= ID:i
+			{:
+				RESULT = new LinkedList<String>();
+				RESULT.add(i);
+			:}
+			| id_list:idl COMMA ID:i
+			{:
+				idl.add(i);
+				RESULT = idl;
+			:};
+
+method ::= type:t ID:i LP RP LCBR statement_list:ls RCBR
+			{:
+				RESULT = new VirtualMethod(t, i, new LinkedList<Formal>(), statement_list);
+			:}	
+			| type:t ID:i LP formal_list:fl RP LCBR statement_list:ls RCBR
+			{:
+				RESULT = new VirtualMethod(t, i, fl, statement_list);
+			:}		
+			| VOID ID:i LP RP LCBR statement_list:ls RCBR
+			{:
+				RESULT = new VirtualMethod(DataTypes.VOID, i, new LinkedList<Formal>(), statement_list);
+			:}	
+			| VOID ID:i LP formal_list:fl RP LCBR statement_list:ls RCBR
+			{:
+				RESULT = new VirtualMethod(DataTypes.VOID, i, fl, statement_list);
+			:}
+			| STATIC type:t ID:i LP RP LCBR statement_list:ls RCBR
+			{:
+				RESULT = new StaticMethod(t, i, new LinkedList<Formal>(), statement_list);
+			:}	
+			| STATIC type:t ID:i LP formal_list:fl RP LCBR statement_list:ls RCBR
+			{:
+				RESULT = new StaticMethod(t, i, fl, statement_list);
+			:}		
+			| STATIC VOID ID:i LP RP LCBR statement_list:ls RCBR
+			{:
+				RESULT = new StaticMethod(DataTypes.VOID, i, new LinkedList<Formal>(), statement_list);
+			:}	
+			| STATIC VOID ID:i LP formal_list:fl RP LCBR statement_list:ls RCBR
+			{:
+				RESULT = new StaticMethod(DataTypes.VOID, i, fl, statement_list);
+			:}			
+
+type ::= INT:integ
+			{: RESULT = new PrimitiveType(integleft, DataTypes.INT); :}
+		| STRING:str
+			{: RESULT = new PrimitiveType(strleft, DataTypes.STRING); :}
+		| BOOLEAN:bool
+			{: RESULT = new PrimitiveType(boolleft, DataTypes.BOOLEAN); :}
+		| CLASS_ID:class_id
+			{: RESULT = new UserType(class_idleft, class_id); :}
+		| type:t LB RB
+			{:	
+				t.incrementDimension();
+				RESULT = t; 
+			:};
+			
+formal ::= type:t ID:id
+			{:
+				RESULT = new Formal(t,id);
+			:};
+
+formal_list ::= formal:f
+			{: 	
+				RESULT = new LinkedList<Formal>(); 
+				RESULT.add(f);
+			:}
+			| formal_list:fl COMMA formal:f
+			{:	
+				fl.add(f);
+				RESULT = fl;
+			:};
+			
+un_op ::= MINUS:m
+		{: RESULT = new UnaryOp(UnaryOps.UMINUS, Expression operand)
+		
+literal ::= INTEGER:i
+			{: RESULT = new Literal(ileft, LiteralTypes.INTEGER); :}
+			| QUOTE:q
+			{: RESULT = new Literal(qleft, LiteralTypes.STRING); :}
+			| TRUE:t
+			{: RESULT = new Literal(tleft, LiteralTypes.TRUE); :}
+			| FALSE:f
+			{: RESULT = new Literal(fleft, LiteralTypes.FALSE); :}
+			| NULL:n
+			{: RESULT = new Literal(nleft, LiteralTypes.NULL); :};
