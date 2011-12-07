@@ -9,7 +9,12 @@ import java.util.LinkedList;
 ////////////////////////////////////////////
 // Symbol list (terminals and non-terminals)
 
-terminal ASSIGN,BOOLEAN,BREAK,CLASS,CONTINUE,DIVIDE,DOT,EQUAL,EXTENDS,ELSE,FALSE,COMMA,GT,GTE,IF,INT,LAND,LB,LP,LCBR,LENGTH,NEW,LNEG,LOR,LT,LTE,MINUS,MOD,MULTIPLY,NEQUAL,NULL,PLUS,RB,RCBR,RETURN,RP,SEMI,STATIC,STRING,THIS,TRUE,VOID,WHILE;
+terminal ASSIGN,DOT,COMMA,LENGTH,LB,RB,LP,RP,LCBR,RCBR,SEMI;
+terminal BOOLEAN,INT,STRING;
+terminal BREAK,CONTINUE,ELSE,IF,WHILE,RETURN;
+terminal CLASS,EXTENDS,NEW,STATIC,THIS,VOID,NULL;
+terminal MOD,MULTIPLY,NEQUAL,DIVIDE,EQUAL,GT,GTE,LAND,LNEG,LOR,LT,LTE;
+terminal FALSE,MINUS,PLUS,TRUE;
 terminal String CLASS_ID;
 terminal String ID;
 terminal Integer INTEGER;
@@ -125,7 +130,7 @@ method ::= type:t ID:i LP RP LCBR statement_list:ls RCBR
 			| STATIC VOID ID:i LP formal_list:fl RP LCBR statement_list:ls RCBR
 			{:
 				RESULT = new StaticMethod(DataTypes.VOID, i, fl, statement_list);
-			:}			
+			:};
 
 type ::= INT:integ
 			{: RESULT = new PrimitiveType(integleft, DataTypes.INT); :}
@@ -156,9 +161,6 @@ formal_list ::= formal:f
 				fl.add(f);
 				RESULT = fl;
 			:};
-			
-un_op ::= MINUS:m
-		{: RESULT = new UnaryOp(UnaryOps.UMINUS, Expression operand)
 		
 literal ::= INTEGER:i
 			{: RESULT = new Literal(ileft, LiteralTypes.INTEGER); :}
