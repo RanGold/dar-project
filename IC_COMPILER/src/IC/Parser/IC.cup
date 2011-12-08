@@ -71,7 +71,8 @@ class_list ::= class_decl:cd
 			:}
 			| class_list:cl class_decl:cd
 			{:
-				cl.getClasses().add(cd);
+				//cl.getClasses().add(cd); why??
+				cl.add(cd);
 				RESULT = cl;
 			:};
 
@@ -89,7 +90,7 @@ field_or_method_list ::= field_list:fl
 							RESULT = new LinkedList<FieldOrMethod>();
 							RESULT.addAll(fl);
 						:}
-						| method_list:m
+						| method:m
 						{:
 							RESULT = new LinkedList<FieldOrMethod>();
 							RESULT.add(m);
