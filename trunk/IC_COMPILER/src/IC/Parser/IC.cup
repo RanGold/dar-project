@@ -19,6 +19,11 @@ terminal String CLASS_ID;
 terminal String ID;
 terminal Integer INTEGER;
 terminal String QUOTE;
+terminal LogicalUnaryOps logicalUnaryOps;
+terminal MathUnaryOps mathUnaryOps;
+terminal LogicalBinaryOps logicalBinaryOps;
+terminal MathBinaryOps mathBinaryOps;
+terminal UMINUS;
 
 non terminal Program program;
 non terminal List<ICClass> class_list;
@@ -27,11 +32,28 @@ non terminal List<Field> field_list;
 non terminal Method method;
 non terminal List<FieldOrMethod> field_or_method_list; 
 non terminal List<String> id_list;
-non terminal List<Statemnt> statement_list;
-non terminal Literal literal
-
+non terminal List<Statement> statement_list;
+non terminal Statement statement;
+non terminal Expression expr;
+non terminal List<Expression> expr_list;
+non terminal Literal literal;
+non terminal Location location;
+non terminal Call call;
+non terminal VirtualCall virtualCall;
+non terminal StaticCall staticCall;
 //////////////////////////
 // Precedence declarations
+precedence right ASSIGN;
+precedence left LOR;
+precedence left LAND;
+precedence left EQUAL, NEQUAL;
+precedence left GT, GTE, LT, LTE;
+precedence left PLUS, MINUS;
+precedence left MULTIPLY, DIVIDE, MOD;
+precedence right UMINUS, LNEG;
+precedence left LP,RP,LB,RB,DOT;
+//i'm not sure this should be first :(
+precedence left IF, ELSE;
 
 //////////////
 // The grammar
@@ -161,6 +183,215 @@ formal_list ::= formal:f
 				fl.add(f);
 				RESULT = fl;
 			:};
+
+//statement_list can be empty
+statement_list ::= 
+				{:
+					RESULT = new LinkedList<Statement>();
+				:}
+				| statement:s
+				{: 
+					RESULT = new LinkedList<Statement>();
+					RESULT.add(s);
+				:}
+				| statement_list:sl statement:s
+				{:
+					sl.add(s);
+					RESULT = sl;
+				:};
+
+statement ::= location:l EQUAL expr:e SEMI
+			{: 
+				RESULT = new Assignment(l, e);
+			:}
+			| call:c SEMI	
+			{: 
+				RESULT = new CallStatement(c);
+			:}	
+			| RETURN:r SEMI
+			{: 
+				RESULT = new Return(rleft);
+			:}			
+			| RETURN:r expr:e SEMI
+			{: 
+				RESULT = new Return(rleft,e);
+			:}
+			| IF LP expr:e RP statement:s SEMI
+			{:
+				RESULT = new If(e, s);
+			:}
+			| IF LP expr:e RP statement:s1 ELSE statement:s2 SEMI
+			{:
+				RESULT = new If(e, s1, s2);
+			:}  			
+			| WHILE LP expr:e RP statement:s SEMI
+			{:
+				RESULT = new While(e, s);
+			:}
+			| BREAK:b SEMI
+			{: 
+				RESULT = new Break(bleft);
+			:}
+			| CONTINUE:c SEMI
+			{: 
+				RESULT = new Continue(cleft);
+			:}
+			| LCBR:l statement_list:sl RCBR
+			{: 
+				RESULT = new StatementBlock(lleft,sl);
+			:}
+			| type:t ID:i SEMI
+			{:
+				RESULT = new LocalVariable(t,i);
+			:}
+			| type:t ID:i ASSIGN expr:e SEMI
+			{:
+				RESULT = new LocalVariable(t, i, e);
+			:};
+
+expr ::= location:l
+		{:
+			RESULT = l;
+		:}	
+		| call:c
+		{:
+			RESULT = c;
+		:}	
+		| THIS:t 
+		{:
+			RESULT = new This(tleft);
+		:}
+		| NEW CLASS_ID:cid LP RP
+		{:
+			RESULT =  new NewClass(cidleft,cid);
+		:}
+		| new type:t LB expr:e RB
+		{:
+			RESULT =  new NewArray(t, e);
+		:}	
+		| expr:e DOT LENGTH
+		{:
+			RESULT =  new Length(e);
+		:}	
+		| expr:e1 mathBinaryOps:bo expr:e2
+		{:
+			RESULT =  new MathBinaryOp(e1, bo, e2);
+		:}
+		| expr:e1 logicalBinaryOps:bo expr:e2
+		{:
+			RESULT =  new LogicalBinaryOp(e1, bo, e2);
+		:}					
+		| mathUnaryOps:uo expr:e
+		{:
+			RESULT =  new MathUnaryOp(uo, e); %prec UMINUS
+		:}
+		| logicalUnaryOps:uo expr:e
+		{:
+			RESULT =  new LogicalUnaryOp(uo, e);
+		:}			
+		| literal:l 
+		{:
+			RESULT = l;
+		:}
+		| LP expr:e RP
+		{:
+			RESULT = new ExpressionBlock(e);
+		:};			
+
+expr_list ::= expr:e
+			{: 
+				RESULT = new LinkedList<Expression>();
+				RESULT.add(e);
+			:}
+			| expr_list:exprl COMMA expr:e
+			{:
+				exprl.add(e);
+				RESULT = exprl;
+			:};
+
+
+call ::= virtualCall:vc
+		{:
+			RESULT = vc;
+		:}
+		| staticCall:sc
+		{:
+			RESULT = sc;
+		:};
+		
+staticCall ::= CLASS_ID:cid DOT ID:id LP RP
+			{:
+				RESULT = new StaticCall(cidleft, cid, id, new LinkedList<Expression>());
+			:}
+
+			| CLASS_ID:cid DOT ID:id LP expr_list:exprl RP
+			{:
+				RESULT = new StaticCall(cidleft, cid, id, exprl);
+			:};
+					
+virtualCall ::= ID:id LP RP
+			{:
+				RESULT = new VirtualCall(idleft, id, new LinkedList<Expression>());
+			:}
+			| ID:id LP expr_list:exprl RP
+			{:
+				RESULT = new VirtualCall(idleft, id, exprl);
+			:}			
+			| expr:e DOT ID:id LP RP
+			{:
+				RESULT = new VirtualCall(eleft, e, id, exprl);
+			:}			
+			| expr:e DOT ID:id LP expr_list:exprl RP
+			{:
+				RESULT = new VirtualCall(eleft, e, id, exprl);
+			:};
+			
+location ::= ID:i
+			{:
+				RESULT = new VariableLocation(ileft, e, i);
+			:}	
+			| expr:e DOT ID:i
+			{:
+				RESULT = new VariableLocation(eleft, e, i);
+			:}				
+			| expr:e1 LB expr:e2 RB 			
+			{:
+				RESULT = new ArrayLocation(e1, e2);
+			:};
+			
+logicalBinaryOps ::= LAND
+				{: RESULT = BinaryOps.LAND; :}
+				| LOR
+				{: RESULT = BinaryOps.LOR; :}
+				| LT
+				{: RESULT = BinaryOps.LT; :}
+				| LTE
+				{: RESULT = BinaryOps.LTE; :}
+				| GT
+				{: RESULT = BinaryOps.GT; :}
+				| GTE
+				{: RESULT = BinaryOps.GTE; :}
+				| EQUAL
+				{: RESULT = BinaryOps.EQUAL; :}
+				| NEQUAL
+ 				{: RESULT = BinaryOps.NEQUAL; :};
+								
+mathBinaryOps ::= PLUS
+			{: RESULT = BinaryOps.PLUS; :}
+			| MINUS
+				{: RESULT = BinaryOps.MINUS; :}
+			| MULTIPLY
+				{: RESULT = BinaryOps.MULTIPLY; :}
+			| DIVIDE
+				{: RESULT = BinaryOps.DIVIDE; :}
+			| MOD
+				{: RESULT = BinaryOps.MOD; :};
+
+logicalUnaryOps ::= LNEG
+				{: RESULT = UnaryOps.LNEG; :};
+					
+mathUnaryOps ::= MINUS
+			{: RESULT = UnaryOps.MINUS; :};	
 		
 literal ::= INTEGER:i
 			{: RESULT = new Literal(ileft, LiteralTypes.INTEGER); :}
