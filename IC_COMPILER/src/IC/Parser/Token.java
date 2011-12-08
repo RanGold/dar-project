@@ -34,6 +34,7 @@ public class Token extends Symbol {
 //			return this.line + ": " + this.sym;
 //	}
 	
+	//what to do with the LibraraySym?
 	public String getSymName(int s) {
 		switch (s) {
 		case IC.Parser.sym.DIVIDE:
