@@ -1,7 +1,7 @@
 package IC.Parser;
 
 import IC.AST.*;
-import IC.DataTypes;
+import IC.*;
 import java_cup.runtime.*;
 import java.util.List;
 import java.util.LinkedList;
@@ -109,11 +109,11 @@ field_or_method_list ::= field_list:fl
 							RESULT = foml;
 						:};
 						
-field_list ::= type id_list:idl SEMI
+field_list ::= type:t id_list:idl SEMI
 			{: 
 				RESULT = new LinkedList<Field>();
 				for (String s : idl) {
-					RESULT.add(new Field(type, s);
+					RESULT.add(new Field(t, s));
 				}
 			:};
 
@@ -130,35 +130,35 @@ id_list ::= ID:i
 
 method ::= type:t ID:i LP RP LCBR statement_list:ls RCBR
 			{:
-				RESULT = new VirtualMethod(t, i, new LinkedList<Formal>(), statement_list);
+				RESULT = new VirtualMethod(t, i, new LinkedList<Formal>(), ls);
 			:}	
 			| type:t ID:i LP formal_list:fl RP LCBR statement_list:ls RCBR
 			{:
-				RESULT = new VirtualMethod(t, i, fl, statement_list);
+				RESULT = new VirtualMethod(t, i, fl, ls);
 			:}		
 			| VOID ID:i LP RP LCBR statement_list:ls RCBR
 			{:
-				RESULT = new VirtualMethod(DataTypes.VOID, i, new LinkedList<Formal>(), statement_list);
+				RESULT = new VirtualMethod(new PrimitiveType(ileft,DataTypes.VOID), i, new LinkedList<Formal>(), ls);
 			:}	
 			| VOID ID:i LP formal_list:fl RP LCBR statement_list:ls RCBR
 			{:
-				RESULT = new VirtualMethod(DataTypes.VOID, i, fl, statement_list);
+				RESULT = new VirtualMethod(new PrimitiveType(ileft,DataTypes.VOID), i, fl, ls);
 			:}
 			| STATIC type:t ID:i LP RP LCBR statement_list:ls RCBR
 			{:
-				RESULT = new StaticMethod(t, i, new LinkedList<Formal>(), statement_list);
+				RESULT = new StaticMethod(t, i, new LinkedList<Formal>(), ls);
 			:}	
 			| STATIC type:t ID:i LP formal_list:fl RP LCBR statement_list:ls RCBR
 			{:
-				RESULT = new StaticMethod(t, i, fl, statement_list);
+				RESULT = new StaticMethod(t, i, fl, ls);
 			:}		
 			| STATIC VOID ID:i LP RP LCBR statement_list:ls RCBR
 			{:
-				RESULT = new StaticMethod(DataTypes.VOID, i, new LinkedList<Formal>(), statement_list);
+				RESULT = new StaticMethod(new PrimitiveType(ileft,DataTypes.VOID), i, new LinkedList<Formal>(), ls);
 			:}	
 			| STATIC VOID ID:i LP formal_list:fl RP LCBR statement_list:ls RCBR
 			{:
-				RESULT = new StaticMethod(DataTypes.VOID, i, fl, statement_list);
+				RESULT = new StaticMethod(new PrimitiveType(ileft,DataTypes.VOID), i, fl, ls);
 			:};
 
 type ::= INT:integ
@@ -245,7 +245,7 @@ statement ::= location:l ASSIGN expr:e SEMI //changed from equal to assign !!!!!
 			:}
 			| LCBR:l statement_list:sl RCBR
 			{: 
-				RESULT = new StatementBlock(lleft,sl);
+				RESULT = new StatementsBlock(lleft,sl);
 			:}
 			| type:t ID:i SEMI
 			{:
@@ -286,7 +286,7 @@ expr ::= location:l
 		:}
 		| unaryops:uo
 		{:
-			RESULT =  uo
+			RESULT =  uo;
 		:}		
 		| literal:l 
 		{:
@@ -338,7 +338,7 @@ virtualCall ::= ID:id LP RP
 			:}			
 			| expr:e DOT ID:id LP RP
 			{:
-				RESULT = new VirtualCall(eleft, e, id, exprl);
+				RESULT = new VirtualCall(eleft, e, id, new LinkedList<Expression>());
 			:}			
 			| expr:e DOT ID:id LP expr_list:exprl RP
 			{:
@@ -347,7 +347,7 @@ virtualCall ::= ID:id LP RP
 			
 location ::= ID:i
 			{:
-				RESULT = new VariableLocation(ileft, e, i);
+				RESULT = new VariableLocation(ileft, i);
 			:}	
 			| expr:e DOT ID:i
 			{:
@@ -388,7 +388,7 @@ binaryops ::= expr:e1 PLUS expr:e2
 unaryops ::= LNEG expr:e
 			{: RESULT = new LogicalUnaryOp(UnaryOps.LNEG,e); :}
 			| MINUS expr:e
-			{: RESULT = MathUnaryOp(UnaryOps.MINUS,e); :}
+			{: RESULT = new MathUnaryOp(UnaryOps.UMINUS,e); :}
 			%prec UMINUS;
 		
 literal ::= INTEGER:i
