@@ -19,10 +19,6 @@ terminal String CLASS_ID;
 terminal String ID;
 terminal Integer INTEGER;
 terminal String QUOTE;
-terminal LogicalUnaryOps logicalUnaryOps;
-terminal MathUnaryOps mathUnaryOps;
-terminal LogicalBinaryOps logicalBinaryOps;
-terminal MathBinaryOps mathBinaryOps;
 terminal UMINUS;
 
 non terminal Program program;
@@ -42,6 +38,13 @@ non terminal Call call;
 non terminal VirtualCall virtualCall;
 non terminal StaticCall staticCall;
 
+non terminal Formal formal;
+non terminal List<Formal> formal_list;
+non terminal Type type;
+
+non terminal BinaryOp binaryops;
+non terminal UnaryOp unaryops;
+
 //////////////////////////
 // Precedence declarations
 precedence right ASSIGN;
@@ -60,7 +63,7 @@ precedence left IF, ELSE;
 // The grammar
 
 //program can have zero classes
-program ::= {: RESULT = new Program(new LinkedList<ICClass>()); :};
+program ::= {: RESULT = new Program(new LinkedList<ICClass>()); :}
 			| class_list:cl
 			{: RESULT = new Program(cl); :};
 			
@@ -193,18 +196,18 @@ statement_list ::=
 				{:
 					RESULT = new LinkedList<Statement>();
 				:}
-				| statement:s
-				{: 
-					RESULT = new LinkedList<Statement>();
-					RESULT.add(s);
-				:}
+//				| statement:s // removed this because it causes shift/reduce conflict !!!!!!!!!!!!!!
+//				{: 
+//					RESULT = new LinkedList<Statement>();
+//					RESULT.add(s);
+//				:}
 				| statement_list:sl statement:s
 				{:
 					sl.add(s);
 					RESULT = sl;
 				:};
 
-statement ::= location:l EQUAL expr:e SEMI
+statement ::= location:l ASSIGN expr:e SEMI //changed from equal to assign !!!!!!!!!!!!
 			{: 
 				RESULT = new Assignment(l, e);
 			:}
@@ -269,7 +272,7 @@ expr ::= location:l
 		{:
 			RESULT =  new NewClass(cidleft,cid);
 		:}
-		| new type:t LB expr:e RB
+		| NEW type:t LB expr:e RB
 		{:
 			RESULT =  new NewArray(t, e);
 		:}	
@@ -277,22 +280,14 @@ expr ::= location:l
 		{:
 			RESULT =  new Length(e);
 		:}	
-		| expr:e1 mathBinaryOps:bo expr:e2
+		| binaryops:bo
 		{:
-			RESULT =  new MathBinaryOp(e1, bo, e2);
+			RESULT =  bo;
 		:}
-		| expr:e1 logicalBinaryOps:bo expr:e2
+		| unaryops:uo
 		{:
-			RESULT =  new LogicalBinaryOp(e1, bo, e2);
-		:}					
-		| mathUnaryOps:uo expr:e
-		{:
-			RESULT =  new MathUnaryOp(uo, e); %prec UMINUS
-		:}
-		| logicalUnaryOps:uo expr:e
-		{:
-			RESULT =  new LogicalUnaryOp(uo, e);
-		:}			
+			RESULT =  uo
+		:}		
 		| literal:l 
 		{:
 			RESULT = l;
@@ -362,40 +357,39 @@ location ::= ID:i
 			{:
 				RESULT = new ArrayLocation(e1, e2);
 			:};
-			
-logicalBinaryOps ::= LAND
-				{: RESULT = BinaryOps.LAND; :}
-				| LOR
-				{: RESULT = BinaryOps.LOR; :}
-				| LT
-				{: RESULT = BinaryOps.LT; :}
-				| LTE
-				{: RESULT = BinaryOps.LTE; :}
-				| GT
-				{: RESULT = BinaryOps.GT; :}
-				| GTE
-				{: RESULT = BinaryOps.GTE; :}
-				| EQUAL
-				{: RESULT = BinaryOps.EQUAL; :}
-				| NEQUAL
- 				{: RESULT = BinaryOps.NEQUAL; :};
 								
-mathBinaryOps ::= PLUS
-			{: RESULT = BinaryOps.PLUS; :}
-			| MINUS
-				{: RESULT = BinaryOps.MINUS; :}
-			| MULTIPLY
-				{: RESULT = BinaryOps.MULTIPLY; :}
-			| DIVIDE
-				{: RESULT = BinaryOps.DIVIDE; :}
-			| MOD
-				{: RESULT = BinaryOps.MOD; :};
+binaryops ::= expr:e1 PLUS expr:e2
+			{: RESULT = new MathBinaryOp(e1,BinaryOps.PLUS,e2); :}
+			| expr:e1 MINUS expr:e2
+			{: RESULT = new MathBinaryOp(e1,BinaryOps.MINUS,e2); :}
+			| expr:e1 MULTIPLY expr:e2
+			{: RESULT = new MathBinaryOp(e1,BinaryOps.MULTIPLY,e2); :}
+			| expr:e1 DIVIDE expr:e2
+			{: RESULT = new MathBinaryOp(e1,BinaryOps.DIVIDE,e2); :}
+			| expr:e1 MOD expr:e2
+			{: RESULT = new MathBinaryOp(e1,BinaryOps.MOD,e2); :}
+			| expr:e1 LAND expr:e2
+			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.LAND,e2); :}
+			| expr:e1 LOR expr:e2
+			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.LOR,e2); :}			
+			| expr:e1 LT expr:e2
+			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.LT,e2); :}				
+			| expr:e1 LTE expr:e2
+			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.LTE,e2); :}				
+			| expr:e1 GT expr:e2
+			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.GT,e2); :}				
+			| expr:e1 GTE expr:e2
+			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.GTE,e2); :}				
+			| expr:e1 EQUAL expr:e2
+			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.EQUAL,e2); :}
+			| expr:e1 NEQUAL expr:e2
+			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.NEQUAL,e2); :};												
 
-logicalUnaryOps ::= LNEG
-				{: RESULT = UnaryOps.LNEG; :};
-					
-mathUnaryOps ::= MINUS
-			{: RESULT = UnaryOps.MINUS; :};	
+unaryops ::= LNEG expr:e
+			{: RESULT = new LogicalUnaryOp(UnaryOps.LNEG,e); :}
+			| MINUS expr:e
+			{: RESULT = MathUnaryOp(UnaryOps.MINUS,e); :}
+			%prec UMINUS;
 		
 literal ::= INTEGER:i
 			{: RESULT = new Literal(ileft, LiteralTypes.INTEGER); :}
