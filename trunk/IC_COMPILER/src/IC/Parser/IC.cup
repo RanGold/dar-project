@@ -41,6 +41,7 @@ non terminal Location location;
 non terminal Call call;
 non terminal VirtualCall virtualCall;
 non terminal StaticCall staticCall;
+
 //////////////////////////
 // Precedence declarations
 precedence right ASSIGN;
@@ -58,11 +59,13 @@ precedence left IF, ELSE;
 //////////////
 // The grammar
 
-program ::= class_list:cl
+//program can have zero classes
+program ::= {: RESULT = new Program(new LinkedList<ICClass>()); :};
+			| class_list:cl
 			{: RESULT = new Program(cl); :};
 			
 class_list ::= class_decl:cd
-		{: 
+			{: 
 				RESULT = new LinkedList<ICClass>();
 				RESULT.add(cd);
 			:}
