@@ -10,7 +10,7 @@ import java_cup.runtime.Symbol;
 public class Compiler {
 	public static void main(String[] args) {
 		boolean parse_libic = false, print_ast = false;
-		String pathTOlibic;
+		String pathTOlibic="";
 		if (args.length == 0) {
 			System.err.println("Missing ic file name, expected: java IC.Compiler <file.ic> [ -L</path/to/libic.sig> ] [ -print-ast ]");
 			return;
@@ -48,19 +48,40 @@ public class Compiler {
 			}
 		}
 		
-		Symbol rootToken;
+		Program ICRoot;
+		//parse the ic file
 		try {
 			FileReader txtFile = new FileReader(args[0]);
 			Lexer scanner = new Lexer(txtFile);
-			Parser p = new Parser(scanner);
-			rootToken = p.parse();
-			Program program = (Program) rootToken.value;
-			PrettyPrinter printer = new PrettyPrinter(args[0]);
-			System.out.println(program.accept(printer));
-
+			Parser parser = new Parser(scanner);
+			Symbol symbol = parser.parse();
+			ICRoot = (Program) symbol.value;
 		} catch (Exception e) {
 			System.err.println(e);
 			return;
+		}
+		System.out.println("IC file parsed successfully");
+		
+		ICClass LibicRoot;
+		//if specified, parse the libic file
+		if (parse_libic) {
+			try {
+				FileReader txtFile = new FileReader(pathTOlibic);
+				Lexer scanner = new Lexer(txtFile);
+				LibraryParser parser = new LibraryParser(scanner);
+				Symbol symbol = parser.parse();
+				LibicRoot = (ICClass) symbol.value;
+				ICRoot.AddNewClass(LibicRoot);
+			} catch (Exception e) {
+				System.err.println(e);
+				return;
+			}
+			System.out.println("libic file parsed successfully");
+		}
+		
+		if (print_ast){
+			PrettyPrinter printer = new PrettyPrinter(args[0]);
+            System.out.println(ICRoot.accept(printer)); 
 		}
 	}
 }
