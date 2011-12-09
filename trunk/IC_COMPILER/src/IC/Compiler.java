@@ -81,7 +81,7 @@ public class Compiler {
 		
 		if (print_ast){
 			PrettyPrinter printer = new PrettyPrinter(args[0]);
-            System.out.println(ICRoot.accept(printer)); 
+            System.out.println(ICRoot.accept(printer));
 		}
 	}
 }
