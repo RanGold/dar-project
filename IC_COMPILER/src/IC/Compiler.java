@@ -8,20 +8,59 @@ import java_cup.runtime.Symbol;
 
 //notice: our directory structure as of the moment is incorrect!!
 public class Compiler {
-  public static void main(String[] args) {
-    Symbol currToken;
-    try {
-        FileReader txtFile = new FileReader(args[0]);
-        Lexer scanner = new Lexer(txtFile);
-        Parser p = new Parser(scanner);
-        currToken = p.parse();
-        Program program = (Program)currToken.value;
-        PrettyPrinter printer = new PrettyPrinter(args[0]);
-        System.out.println(program.accept(printer));
-        
-    } catch (Exception e) {
-        System.err.println(e);
-        return;
-    }
-  }
+	public static void main(String[] args) {
+		boolean parse_libic = false, print_ast = false;
+		String pathTOlibic;
+		if (args.length == 0) {
+			System.err.println("Missing ic file name, expected: java IC.Compiler <file.ic> [ -L</path/to/libic.sig> ] [ -print-ast ]");
+			return;
+		}
+		if (args.length > 3) {
+			System.err.println("Too many arguments to command line, expected: java IC.Compiler <file.ic> [ -L</path/to/libic.sig> ] [ -print-ast ]");
+			return;
+		}
+		
+		//args[0] should always contain the path to the file.IC
+		
+		for (int i=1;i<args.length;i++){
+			if (args[i].startsWith("-L")){
+				if (parse_libic){
+					System.err.println("can't use the -L flag more than once");
+					return;
+				}
+				if (args.length==2){
+					System.err.println("-L flag should be followed with the libic file's path (no space)");
+					return;
+				}
+				parse_libic=true;
+				pathTOlibic=args[i].substring(2);
+			}
+			else if (args[i].equals("-print-ast")){
+				if (print_ast){
+					System.err.println("can't use the -print-ast flag more than once");
+					return;
+				}
+				print_ast=true;
+			}
+			else{
+				System.err.println("Illegal input, expected: java IC.Compiler <file.ic> [ -L</path/to/libic.sig> ] [ -print-ast ]");
+				return;
+			}
+		}
+		
+		Symbol rootToken;
+		try {
+			FileReader txtFile = new FileReader(args[0]);
+			Lexer scanner = new Lexer(txtFile);
+			Parser p = new Parser(scanner);
+			rootToken = p.parse();
+			Program program = (Program) rootToken.value;
+			PrettyPrinter printer = new PrettyPrinter(args[0]);
+			System.out.println(program.accept(printer));
+
+		} catch (Exception e) {
+			System.err.println(e);
+			return;
+		}
+	}
 }
