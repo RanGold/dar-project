@@ -13,11 +13,11 @@ public class Compiler {
 		String pathTOlibic="";
 		if (args.length == 0) {
 			System.err.println("Missing ic file name, expected: java IC.Compiler <file.ic> [ -L</path/to/libic.sig> ] [ -print-ast ]");
-			return;
+			System.exit(0);
 		}
 		if (args.length > 3) {
 			System.err.println("Too many arguments to command line, expected: java IC.Compiler <file.ic> [ -L</path/to/libic.sig> ] [ -print-ast ]");
-			return;
+			System.exit(0);
 		}
 		
 		//args[0] should always contain the path to the file.IC
@@ -26,11 +26,11 @@ public class Compiler {
 			if (args[i].startsWith("-L")){
 				if (parse_libic){
 					System.err.println("can't use the -L flag more than once");
-					return;
+					System.exit(0);
 				}
 				if (args.length==2){
 					System.err.println("-L flag should be followed with the libic file's path (no space)");
-					return;
+					System.exit(0);
 				}
 				parse_libic=true;
 				pathTOlibic=args[i].substring(2);
@@ -38,17 +38,17 @@ public class Compiler {
 			else if (args[i].equals("-print-ast")){
 				if (print_ast){
 					System.err.println("can't use the -print-ast flag more than once");
-					return;
+					System.exit(0);
 				}
 				print_ast=true;
 			}
 			else{
 				System.err.println("Illegal input, expected: java IC.Compiler <file.ic> [ -L</path/to/libic.sig> ] [ -print-ast ]");
-				return;
+				System.exit(0);
 			}
 		}
 		
-		Program ICRoot;
+		Program ICRoot=null;
 		//parse the ic file
 		try {
 			FileReader txtFile = new FileReader(args[0]);
@@ -58,7 +58,7 @@ public class Compiler {
 			ICRoot = (Program) symbol.value;
 		} catch (Exception e) {
 			System.err.println(e);
-			return;
+			System.exit(0);
 		}
 		System.out.println("IC file parsed successfully");
 		
@@ -74,7 +74,7 @@ public class Compiler {
 				ICRoot.AddNewClass(LibicRoot);
 			} catch (Exception e) {
 				System.err.println(e);
-				return;
+				System.exit(0);
 			}
 			System.out.println("libic file parsed successfully");
 		}
