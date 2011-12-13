@@ -3,38 +3,35 @@ package IC.Parser;
 import java_cup.runtime.Symbol;
 
 public class Token extends Symbol {
-	private int line;
 	private boolean val;
 
 	public Token(int id, int line) {
-		super(id, null);
-		this.line =line + 1;
-		this.val =false;
+		super(id, line + 1, 0);
+		this.val = false;
 	}
 
 	public Token(int id, int line, Object value) {
-		super(id, value);
-		this.line =line + 1;
-		this.val =true;
+		super(id,line+1,0, value);
+		this.val = true;
 	}
 
 	public String toString() {
 		if (val)
-			return this.line + ": " + getSymName(this.sym) + "("
+			return left + ": " + getSymName(this.sym) + "("
 					+ this.value.toString() + ")";
 		else
-			return this.line + ": " + getSymName(this.sym);
+			return left + ": " + getSymName(this.sym);
 	}
 
-//	public String toString() {
-//		if (val)
-//			return this.line + ": " + this.sym + "(" + this.value.toString()
-//					+ ")";
-//		else
-//			return this.line + ": " + this.sym;
-//	}
-	
-	//what to do with the LibraraySym?
+	// public String toString() {
+	// if (val)
+	// return this.line + ": " + this.sym + "(" + this.value.toString()
+	// + ")";
+	// else
+	// return this.line + ": " + this.sym;
+	// }
+
+	// what to do with the LibraraySym?
 	public String getSymName(int s) {
 		switch (s) {
 		case IC.Parser.sym.DIVIDE:

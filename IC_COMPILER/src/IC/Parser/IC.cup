@@ -6,17 +6,27 @@ import java_cup.runtime.*;
 import java.util.List;
 import java.util.LinkedList;
 
+
+parser code {: 
+	public void unrecovered_syntax_error(Symbol cur_token) throws SyntaxError{
+		throw new SyntaxError(cur_token);
+	}
+	public void syntax_error(Symbol current_token){}
+ :};
+
 ////////////////////////////////////////////
 // Symbol list (terminals and non-terminals)
 
-terminal ASSIGN,DOT,COMMA,LENGTH,LB,RB,LP,RP,LCBR,RCBR,SEMI;
-terminal BOOLEAN,INT,STRING;
-terminal BREAK,CONTINUE,ELSE,IF,WHILE,RETURN;
-terminal CLASS,EXTENDS,NEW,STATIC,THIS,VOID,NULL;
-terminal MOD,MULTIPLY,NEQUAL,DIVIDE,EQUAL,GT,GTE,LAND,LNEG,LOR,LT,LTE;
-terminal FALSE,MINUS,PLUS,TRUE;
+terminal BOOLEAN,CLASS,COMMA,INT,LB,LP,LCBR,RB,RCBR,RP,SEMI,STATIC,STRING,VOID;
 terminal String CLASS_ID;
 terminal String ID;
+
+terminal ASSIGN,DOT,LENGTH;
+terminal BREAK,CONTINUE,ELSE,IF,WHILE,RETURN;
+terminal EXTENDS,NEW,THIS,NULL;
+terminal MOD,MULTIPLY,NEQUAL,DIVIDE,EQUAL,GT,GTE,LAND,LNEG,LOR,LT,LTE;
+terminal FALSE,MINUS,PLUS,TRUE;
+
 terminal Integer INTEGER;
 terminal String QUOTE;
 terminal UMINUS;
@@ -62,51 +72,65 @@ precedence left IF, ELSE;
 //////////////
 // The grammar
 
+
+
+
+
 //program can have zero classes
-program ::= {: RESULT = new Program(new LinkedList<ICClass>()); :}
+program ::= {: RESULT = new Program(new LinkedList<ICClass>()); 
+					System.out.println("new empty program");:}
 			| class_list:cl
-			{: RESULT = new Program(cl); :};
+			{: RESULT = new Program(cl); System.out.println("new non empty program"); :};
 			
 class_list ::= class_decl:cd
 			{: 
 				RESULT = new LinkedList<ICClass>();
 				RESULT.add(cd);
+				System.out.println("new class decleration added to list");
 			:}
 			| class_list:cl class_decl:cd
 			{:
 				//cl.getClasses().add(cd); why??
 				cl.add(cd);
-				RESULT = cl;
+				RESULT = cl; System.out.println("new class decleration added to list");
 			:};
 
 class_decl ::= CLASS CLASS_ID:cid LCBR RCBR
-			{: RESULT = new ICClass(cidleft, cid, new LinkedList<Field>(), new LinkedList<Method>()); :}
+			{: RESULT = new ICClass(cidleft, cid, new LinkedList<Field>(), new LinkedList<Method>());
+			System.out.println("new class decleration "); :}
 			| CLASS CLASS_ID:cid LCBR field_or_method_list:foml RCBR
-			{: RESULT = new ICClass(cidleft, cid, FieldOrMethod.getFields(foml), FieldOrMethod.getMethods(foml)); :}
+			{: RESULT = new ICClass(cidleft, cid, FieldOrMethod.getFields(foml), FieldOrMethod.getMethods(foml)); 
+			System.out.println("new class decleration ");:}
 			| CLASS CLASS_ID:cid EXTENDS CLASS_ID:bid LCBR RCBR
-			{: RESULT = new ICClass(cidleft, cid, bid, new LinkedList<Field>(), new LinkedList<Method>()); :}
+			{: RESULT = new ICClass(cidleft, cid, bid, new LinkedList<Field>(), new LinkedList<Method>()); 
+			System.out.println("new class decleration ");:}
 			| CLASS CLASS_ID:cid EXTENDS CLASS_ID:bid LCBR field_or_method_list:foml RCBR
-			{: RESULT = new ICClass(cidleft, cid, bid, FieldOrMethod.getFields(foml), FieldOrMethod.getMethods(foml)); :};
+			{: RESULT = new ICClass(cidleft, cid, bid, FieldOrMethod.getFields(foml), FieldOrMethod.getMethods(foml));
+			System.out.println("new class decleration "); :};
 			
 field_or_method_list ::= field_list:fl
 						{:
 							RESULT = new LinkedList<FieldOrMethod>();
 							RESULT.addAll(fl);
+							System.out.println("new field_or_method_list ");
 						:}
 						| method:m
 						{:
 							RESULT = new LinkedList<FieldOrMethod>();
 							RESULT.add(m);
+							System.out.println("new field_or_method_list ");
 						:}
 						| field_or_method_list:foml field_list:fl
 						{:
 							foml.addAll(fl);
 							RESULT = foml;
+							System.out.println("new field_or_method_list ");
 						:}
 						| field_or_method_list:foml method:m
 						{:
 							foml.add(m);
 							RESULT = foml;
+							System.out.println("new field_or_method_list ");
 						:};
 						
 field_list ::= type:t id_list:idl SEMI
@@ -114,6 +138,7 @@ field_list ::= type:t id_list:idl SEMI
 				RESULT = new LinkedList<Field>();
 				for (String s : idl) {
 					RESULT.add(new Field(t, s));
+					System.out.println("new field list ");
 				}
 			:};
 
@@ -121,80 +146,99 @@ id_list ::= ID:i
 			{:
 				RESULT = new LinkedList<String>();
 				RESULT.add(i);
+				System.out.println("new id  added to list "+i);
 			:}
 			| id_list:idl COMMA ID:i
 			{:
 				idl.add(i);
 				RESULT = idl;
+				System.out.println("new id  added to list "+i);
 			:};
 
 method ::= type:t ID:i LP RP LCBR statement_list:ls RCBR
 			{:
 				RESULT = new VirtualMethod(t, i, new LinkedList<Formal>(), ls);
+				System.out.println("new method ");
 			:}	
 			| type:t ID:i LP formal_list:fl RP LCBR statement_list:ls RCBR
 			{:
 				RESULT = new VirtualMethod(t, i, fl, ls);
+				System.out.println("new method ");
 			:}		
 			| VOID ID:i LP RP LCBR statement_list:ls RCBR
 			{:
 				RESULT = new VirtualMethod(new PrimitiveType(ileft,DataTypes.VOID), i, new LinkedList<Formal>(), ls);
+				System.out.println("new method ");
 			:}	
 			| VOID ID:i LP formal_list:fl RP LCBR statement_list:ls RCBR
 			{:
 				RESULT = new VirtualMethod(new PrimitiveType(ileft,DataTypes.VOID), i, fl, ls);
+				System.out.println("new method ");
 			:}
 			| STATIC type:t ID:i LP RP LCBR statement_list:ls RCBR
 			{:
 				RESULT = new StaticMethod(t, i, new LinkedList<Formal>(), ls);
+				System.out.println("new method ");
 			:}	
 			| STATIC type:t ID:i LP formal_list:fl RP LCBR statement_list:ls RCBR
 			{:
 				RESULT = new StaticMethod(t, i, fl, ls);
+				System.out.println("new method ");
 			:}		
 			| STATIC VOID ID:i LP RP LCBR statement_list:ls RCBR
 			{:
 				RESULT = new StaticMethod(new PrimitiveType(ileft,DataTypes.VOID), i, new LinkedList<Formal>(), ls);
+				System.out.println("new method ");
 			:}	
 			| STATIC VOID ID:i LP formal_list:fl RP LCBR statement_list:ls RCBR
 			{:
 				RESULT = new StaticMethod(new PrimitiveType(ileft,DataTypes.VOID), i, fl, ls);
+				System.out.println("new method ");
 			:};
 
 type ::= INT:integ
-			{: RESULT = new PrimitiveType(integleft, DataTypes.INT); :}
+			{: RESULT = new PrimitiveType(integleft, DataTypes.INT);
+			System.out.println("new type int "); :}
 		| STRING:str
-			{: RESULT = new PrimitiveType(strleft, DataTypes.STRING); :}
+			{: RESULT = new PrimitiveType(strleft, DataTypes.STRING); 
+			System.out.println("new type string ");:}
 		| BOOLEAN:bool
-			{: RESULT = new PrimitiveType(boolleft, DataTypes.BOOLEAN); :}
+			{: RESULT = new PrimitiveType(boolleft, DataTypes.BOOLEAN); 
+			System.out.println("new type string "); :}
 		| CLASS_ID:class_id
-			{: RESULT = new UserType(class_idleft, class_id); :}
+			{: RESULT = new UserType(class_idleft, class_id); 
+			System.out.println("new type string "); :}
 		| type:t LB RB
 			{:	
 				t.incrementDimension();
 				RESULT = t; 
+				System.out.println("new type dimention ");
 			:};
 			
 formal ::= type:t ID:id
 			{:
 				RESULT = new Formal(t,id);
+				System.out.println("new formal");
 			:};
 
 formal_list ::= formal:f
 			{: 	
 				RESULT = new LinkedList<Formal>(); 
 				RESULT.add(f);
+				System.out.println("new formal list add");
 			:}
 			| formal_list:fl COMMA formal:f
 			{:	
 				fl.add(f);
 				RESULT = fl;
+				System.out.println("new formal list add");
 			:};
 
 //statement_list can be empty
 statement_list ::= 
 				{:
 					RESULT = new LinkedList<Statement>();
+					System.out.println("new empty statemrnt to statemtn list");
 				:}
 //				| statement:s // removed this because it causes shift/reduce conflict !!!!!!!!!!!!!!
 //				{: 
@@ -205,199 +249,227 @@ statement_list ::=
 				{:
 					sl.add(s);
 					RESULT = sl;
+					System.out.println("new statemrnt to statemtn list");
 				:};
 
 statement ::= location:l ASSIGN expr:e SEMI //changed from equal to assign !!!!!!!!!!!!
 			{: 
 				RESULT = new Assignment(l, e);
+				System.out.println("new statement");
 			:}
 			| call:c SEMI	
 			{: 
 				RESULT = new CallStatement(c);
+				System.out.println("new statement");
 			:}	
 			| RETURN:r SEMI
 			{: 
 				RESULT = new Return(rleft);
+				System.out.println("new statement");
 			:}			
 			| RETURN:r expr:e SEMI
 			{: 
 				RESULT = new Return(rleft,e);
+				System.out.println("new statement");
 			:}
 			| IF LP expr:e RP statement:s SEMI
 			{:
 				RESULT = new If(e, s);
+				System.out.println("new statement");
 			:}
 			| IF LP expr:e RP statement:s1 ELSE statement:s2 SEMI
 			{:
 				RESULT = new If(e, s1, s2);
+				System.out.println("new statement");
 			:}  			
 			| WHILE LP expr:e RP statement:s SEMI
 			{:
 				RESULT = new While(e, s);
+				System.out.println("new statement");
 			:}
 			| BREAK:b SEMI
 			{: 
 				RESULT = new Break(bleft);
+				System.out.println("new statement");
 			:}
 			| CONTINUE:c SEMI
 			{: 
 				RESULT = new Continue(cleft);
+				System.out.println("new statement");
 			:}
 			| LCBR:l statement_list:sl RCBR
 			{: 
 				RESULT = new StatementsBlock(lleft,sl);
+				System.out.println("new statement");
 			:}
 			| type:t ID:i SEMI
 			{:
 				RESULT = new LocalVariable(t,i);
+				System.out.println("new statement id");
 			:}
 			| type:t ID:i ASSIGN expr:e SEMI
 			{:
 				RESULT = new LocalVariable(t, i, e);
+				System.out.println("new statement");
 			:};
 
 expr ::= location:l
 		{:
-			RESULT = l;
+			RESULT = l; System.out.println("new expr");
 		:}	
 		| call:c
 		{:
-			RESULT = c;
+			RESULT = c; System.out.println("new expr");
 		:}	
 		| THIS:t 
 		{:
-			RESULT = new This(tleft);
+			RESULT = new This(tleft); System.out.println("new expr");
 		:}
 		| NEW CLASS_ID:cid LP RP
 		{:
-			RESULT =  new NewClass(cidleft,cid);
+			RESULT =  new NewClass(cidleft,cid); System.out.println("new expr");
 		:}
 		| NEW type:t LB expr:e RB
 		{:
-			RESULT =  new NewArray(t, e);
+			RESULT =  new NewArray(t, e); System.out.println("new expr");
 		:}	
 		| expr:e DOT LENGTH
 		{:
-			RESULT =  new Length(e);
+			RESULT =  new Length(e); System.out.println("new expr");
 		:}	
 		| binaryops:bo
 		{:
-			RESULT =  bo;
+			RESULT =  bo; System.out.println("new expr");
 		:}
 		| unaryops:uo
 		{:
-			RESULT =  uo;
+			RESULT =  uo; System.out.println("new expr");
 		:}		
 		| literal:l 
 		{:
-			RESULT = l;
+			RESULT = l; System.out.println("new expr");
 		:}
 		| LP expr:e RP
 		{:
-			RESULT = new ExpressionBlock(e);
+			RESULT = new ExpressionBlock(e); System.out.println("new expr");
 		:};			
 
 expr_list ::= expr:e
 			{: 
 				RESULT = new LinkedList<Expression>();
 				RESULT.add(e);
+				System.out.println("new expr LIST");
 			:}
 			| expr_list:exprl COMMA expr:e
 			{:
 				exprl.add(e);
-				RESULT = exprl;
+				RESULT = exprl; System.out.println("new expr LIST");
 			:};
 
 
 call ::= virtualCall:vc
 		{:
 			RESULT = vc;
+			System.out.println("virtual call");
 		:}
 		| staticCall:sc
 		{:
 			RESULT = sc;
+				System.out.println("static call");
 		:};
 		
 staticCall ::= CLASS_ID:cid DOT ID:id LP RP
 			{:
 				RESULT = new StaticCall(cidleft, cid, id, new LinkedList<Expression>());
+					System.out.println("new staticCall");
 			:}
 
 			| CLASS_ID:cid DOT ID:id LP expr_list:exprl RP
 			{:
 				RESULT = new StaticCall(cidleft, cid, id, exprl);
+				System.out.println("new staticCall");
+				
 			:};
 					
 virtualCall ::= ID:id LP RP
 			{:
 				RESULT = new VirtualCall(idleft, id, new LinkedList<Expression>());
+				System.out.println("new virtualCall");
 			:}
 			| ID:id LP expr_list:exprl RP
 			{:
 				RESULT = new VirtualCall(idleft, id, exprl);
+				System.out.println("new virtualCall");
 			:}			
 			| expr:e DOT ID:id LP RP
 			{:
 				RESULT = new VirtualCall(eleft, e, id, new LinkedList<Expression>());
+				System.out.println("new virtualCall");
 			:}			
 			| expr:e DOT ID:id LP expr_list:exprl RP
 			{:
 				RESULT = new VirtualCall(eleft, e, id, exprl);
+				System.out.println("new virtualCall");
 			:};
 			
 location ::= ID:i
 			{:
 				RESULT = new VariableLocation(ileft, i);
+				System.out.println("VariableLocation");
 			:}	
 			| expr:e DOT ID:i
 			{:
 				RESULT = new VariableLocation(eleft, e, i);
+				System.out.println("VariableLocation");
 			:}				
 			| expr:e1 LB expr:e2 RB 			
 			{:
 				RESULT = new ArrayLocation(e1, e2);
+				System.out.println("ArrayLocation");
 			:};
 								
 binaryops ::= expr:e1 PLUS expr:e2
-			{: RESULT = new MathBinaryOp(e1,BinaryOps.PLUS,e2); :}
+			{: RESULT = new MathBinaryOp(e1,BinaryOps.PLUS,e2); 
+			System.out.println("binaryops"); :}
 			| expr:e1 MINUS expr:e2
-			{: RESULT = new MathBinaryOp(e1,BinaryOps.MINUS,e2); :}
+			{: RESULT = new MathBinaryOp(e1,BinaryOps.MINUS,e2); 
+			System.out.println("binaryops");:}
 			| expr:e1 MULTIPLY expr:e2
-			{: RESULT = new MathBinaryOp(e1,BinaryOps.MULTIPLY,e2); :}
+			{: RESULT = new MathBinaryOp(e1,BinaryOps.MULTIPLY,e2);System.out.println("binaryops"); :}
 			| expr:e1 DIVIDE expr:e2
-			{: RESULT = new MathBinaryOp(e1,BinaryOps.DIVIDE,e2); :}
+			{: RESULT = new MathBinaryOp(e1,BinaryOps.DIVIDE,e2);System.out.println("binaryops"); :}
 			| expr:e1 MOD expr:e2
-			{: RESULT = new MathBinaryOp(e1,BinaryOps.MOD,e2); :}
+			{: RESULT = new MathBinaryOp(e1,BinaryOps.MOD,e2);System.out.println("binaryops"); :}
 			| expr:e1 LAND expr:e2
-			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.LAND,e2); :}
+			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.LAND,e2);System.out.println("binaryops"); :}
 			| expr:e1 LOR expr:e2
-			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.LOR,e2); :}			
+			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.LOR,e2); System.out.println("binaryops");:}			
 			| expr:e1 LT expr:e2
-			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.LT,e2); :}				
+			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.LT,e2); System.out.println("binaryops");:}				
 			| expr:e1 LTE expr:e2
-			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.LTE,e2); :}				
+			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.LTE,e2); System.out.println("binaryops");:}				
 			| expr:e1 GT expr:e2
-			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.GT,e2); :}				
+			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.GT,e2); System.out.println("binaryops");:}				
 			| expr:e1 GTE expr:e2
-			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.GTE,e2); :}				
+			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.GTE,e2);System.out.println("binaryops"); :}				
 			| expr:e1 EQUAL expr:e2
-			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.EQUAL,e2); :}
+			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.EQUAL,e2); System.out.println("binaryops");:}
 			| expr:e1 NEQUAL expr:e2
-			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.NEQUAL,e2); :};												
+			{: RESULT = new LogicalBinaryOp(e1,BinaryOps.NEQUAL,e2);System.out.println("binaryops"); :};												
 
 unaryops ::= LNEG expr:e
-			{: RESULT = new LogicalUnaryOp(UnaryOps.LNEG,e); :}
+			{: RESULT = new LogicalUnaryOp(UnaryOps.LNEG,e);System.out.println("unaryops"); :}
 			| MINUS expr:e
-			{: RESULT = new MathUnaryOp(UnaryOps.UMINUS,e); :}
+			{: RESULT = new MathUnaryOp(UnaryOps.UMINUS,e); System.out.println("unaryops"); :}
 			%prec UMINUS;
 		
 literal ::= INTEGER:i
-			{: RESULT = new Literal(ileft, LiteralTypes.INTEGER); :}
+			{: RESULT = new Literal(ileft, LiteralTypes.INTEGER,i); System.out.println("int literal");:}
 			| QUOTE:q
-			{: RESULT = new Literal(qleft, LiteralTypes.STRING); :}
+			{: RESULT = new Literal(qleft, LiteralTypes.STRING,q);System.out.println("string literal"); :}
 			| TRUE:t
-			{: RESULT = new Literal(tleft, LiteralTypes.TRUE); :}
+			{: RESULT = new Literal(tleft, LiteralTypes.TRUE); System.out.println("true literal");:}
 			| FALSE:f
-			{: RESULT = new Literal(fleft, LiteralTypes.FALSE); :}
+			{: RESULT = new Literal(fleft, LiteralTypes.FALSE);System.out.println("false literal"); :}
 			| NULL:n
-			{: RESULT = new Literal(nleft, LiteralTypes.NULL); :};
+			{: RESULT = new Literal(nleft, LiteralTypes.NULL); System.out.println("null literal");:};

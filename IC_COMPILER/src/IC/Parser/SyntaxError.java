@@ -1,19 +1,27 @@
 package IC.Parser;
 
+import java_cup.runtime.Symbol;
+
 @SuppressWarnings("serial")
 public class SyntaxError extends Exception {
 	private int line;
-
-	public SyntaxError(String message) {
-		super(message);
-	}
+	private Symbol tok;
+	private boolean m;
 
 	public SyntaxError(String message, int line) {
 		super(message);
-		this.line = line + 1;// TODO: do we need this???
+		m=true;
+		this.line=line;
+	}
+
+	public SyntaxError(Symbol tok) {
+		m=false;
+		this.tok=tok;
 	}
 
 	public String toString() {
-		return line + ": Syntax error: " + this.getMessage();
+		if (m)
+			return "Syntax error: "+getMessage()+" (line: )"+line;
+		return "Syntax error: "+tok.toString();
 	}
 }
