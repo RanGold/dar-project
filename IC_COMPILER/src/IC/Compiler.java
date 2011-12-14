@@ -6,11 +6,12 @@ import IC.Parser.*;
 import java_cup.runtime.Symbol;
 
 
-//notice: our directory structure as of the moment is incorrect!!
+//TODO: notice: our directory structure as of the moment is incorrect!!
 public class Compiler {
+	
 	public static void main(String[] args) {
-		boolean parse_libic = false, print_ast = false;
-		String pathTOlibic="";
+		boolean parse_libic = false, print_ast = false, seen_ICpath=false;
+		String pathTOlibic="",pathTOic="";
 		if (args.length == 0) {
 			System.err.println("Missing ic file name, expected: java IC.Compiler <file.ic> [ -L</path/to/libic.sig> ] [ -print-ast ]");
 			return;
@@ -20,16 +21,18 @@ public class Compiler {
 			return;
 		}
 		
-		//args[0] should always contain the path to the file.IC
-		
-		for (int i=1;i<args.length;i++){
+		for (int i=0;i<args.length;i++){
 			if (args[i].startsWith("-L")){
 				if (parse_libic){
 					System.err.println("can't use the -L flag more than once");
 					return;
 				}
-				if (args.length==2){
-					System.err.println("-L flag should be followed with the libic file's path (no space)");
+				else if (!seen_ICpath){
+					System.err.println("Path to IC file must appear before the -L flag");
+					return;
+				}
+				if (args[i].length()==2){
+					System.err.println("-L flag should be followed by the libic file's path (no space)");
 					return;
 				}
 				parse_libic=true;
@@ -43,9 +46,18 @@ public class Compiler {
 				print_ast=true;
 			}
 			else{
-				System.err.println("Illegal input, expected: java IC.Compiler <file.ic> [ -L</path/to/libic.sig> ] [ -print-ast ]");
-				return;
+				if (seen_ICpath){
+					System.err.println("Illegal input, expected: java IC.Compiler <file.ic> [ -L</path/to/libic.sig> ] [ -print-ast ]");
+					return;
+				}
+				seen_ICpath=true;
+				pathTOic=args[i];
 			}
+		}
+		
+		if (!seen_ICpath){
+			System.err.println("Missing path to IC file");
+			return;
 		}
 		
 		ICClass LibicRoot;
@@ -72,7 +84,7 @@ public class Compiler {
 		Program ICRoot=null;
 		//parse the ic file
 		try {
-			FileReader txtFile = new FileReader(args[0]);
+			FileReader txtFile = new FileReader(pathTOic);
 			Lexer scanner = new Lexer(txtFile);
 			Parser parser = new Parser(scanner);
 			Symbol symbol = parser.parse();
@@ -81,10 +93,10 @@ public class Compiler {
 			System.err.println(e.getMessage());
 			return;
 		}
-		System.out.println("Parsed "+args[0]+" successfully!");
+		System.out.println("Parsed "+pathTOic+" successfully!");
 
 		if (print_ast){
-			PrettyPrinter printer = new PrettyPrinter(args[0]);
+			PrettyPrinter printer = new PrettyPrinter(pathTOic);
             System.out.println(ICRoot.accept(printer));
 		}
 	}
