@@ -14,6 +14,10 @@ public class LexicalError extends Exception {
 		this.value=value;
 	}
 	
+	public String getMessage(){
+		return toString();
+	}
+	
 	public String toString() {
 		if (value==null)
 			return line + ": "  + "Lexical error: " + this.getMessage();

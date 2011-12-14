@@ -19,6 +19,10 @@ public class SyntaxError extends Exception {
 		this.tok=tok;
 	}
 
+	public String getMessage(){
+		return toString();
+	}
+	
 	public String toString() {
 		if (m)
 			return "Syntax error: "+getMessage()+" (line: )"+line;

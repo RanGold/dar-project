@@ -54,6 +54,7 @@ non terminal Type type;
 
 non terminal BinaryOp binaryops;
 non terminal UnaryOp unaryops;
+non terminal Statement statement_short;
 
 //////////////////////////
 // Precedence declarations
@@ -252,7 +253,7 @@ statement_list ::=
 					System.out.println("new statemrnt to statemtn list");
 				:};
 
-statement ::= location:l ASSIGN expr:e SEMI //changed from equal to assign !!!!!!!!!!!!
+statement_short ::= location:l ASSIGN expr:e SEMI //changed from equal to assign !!!!!!!!!!!!
 			{: 
 				RESULT = new Assignment(l, e);
 				System.out.println("new statement1");
@@ -272,12 +273,12 @@ statement ::= location:l ASSIGN expr:e SEMI //changed from equal to assign !!!!!
 				RESULT = new Return(rleft,e);
 				System.out.println("new statement4");
 			:}
-			| IF LP expr:e RP statement:s
+			| IF LP expr:e RP statement_short:s
 			{:
 				RESULT = new If(e, s);
 				System.out.println("new statement5");
 			:}
-			| IF LP expr:e RP statement:s1 ELSE statement:s2
+			| IF LP expr:e RP statement_short:s1 ELSE statement_short:s2
 			{:
 				RESULT = new If(e, s1, s2);
 				System.out.println("new statement6");
@@ -301,6 +302,11 @@ statement ::= location:l ASSIGN expr:e SEMI //changed from equal to assign !!!!!
 			{: 
 				RESULT = new StatementsBlock(lleft,sl);
 				System.out.println("new statement10");
+			:};
+			
+statement ::= statement_short:ss
+			{:
+				RESULT = ss;
 			:}
 			| type:t ID:i SEMI
 			{:
@@ -312,7 +318,7 @@ statement ::= location:l ASSIGN expr:e SEMI //changed from equal to assign !!!!!
 				RESULT = new LocalVariable(t, i, e);
 				System.out.println("new statement11");
 			:};
-
+			
 expr ::= location:l
 		{:
 			RESULT = l; System.out.println("new expr");
