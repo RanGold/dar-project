@@ -108,6 +108,8 @@ package IC.Parser;
 <QUOTE> "\\\"" 					{ quote += yytext(); }
 <QUOTE> "\"" 					{ quote += yytext(); yybegin(YYINITIAL); return new Token(sym.QUOTE,yyline,quote); }
 <QUOTE> [ -\[\]-~]				{ quote += yytext(); }
+<QUOTE> [\n]					{ throw new LexicalError("illegal character in string:",yyline,"enter key is not allowed"); }
+<QUOTE> "\r\n"					{ throw new LexicalError("illegal character in string:",yyline,"enter key is not allowed"); }
 <QUOTE> . 						{ throw new LexicalError("illegal character in string",yyline,yytext()); }
 
 /* Identifiers*/

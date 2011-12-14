@@ -25,7 +25,7 @@ public class SyntaxError extends Exception {
 	
 	public String toString() {
 		if (m)
-			return "Syntax error: "+getMessage()+" (line: )"+line;
+			return "Syntax error: "+super.getMessage()+" (line: )"+line;
 		return "Syntax error: "+tok.toString();
 	}
 }

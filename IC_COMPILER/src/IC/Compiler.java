@@ -48,6 +48,27 @@ public class Compiler {
 			}
 		}
 		
+		ICClass LibicRoot;
+		//if specified, parse the libic file
+		if (parse_libic) {
+			try {
+				FileReader txtFile = new FileReader(pathTOlibic);
+				Lexer scanner = new Lexer(txtFile);
+				LibraryParser parser = new LibraryParser(scanner);
+				Symbol symbol = parser.parse();
+				LibicRoot = (ICClass) symbol.value;
+				//ICRoot.AddNewClass(LibicRoot);
+			} catch (Exception e) {
+				System.err.println(e.getMessage());
+				return;
+			}
+			System.out.println("Parsed "+pathTOlibic+" successfully!");
+			if (print_ast){
+				PrettyPrinter printer = new PrettyPrinter(pathTOlibic);
+	            System.out.println(LibicRoot.accept(printer));
+			}
+		}
+		
 		Program ICRoot=null;
 		//parse the ic file
 		try {
@@ -60,25 +81,8 @@ public class Compiler {
 			System.err.println(e.getMessage());
 			return;
 		}
-		System.out.println("IC file parsed successfully");
-		
-		ICClass LibicRoot;
-		//if specified, parse the libic file
-		if (parse_libic) {
-			try {
-				FileReader txtFile = new FileReader(pathTOlibic);
-				Lexer scanner = new Lexer(txtFile);
-				LibraryParser parser = new LibraryParser(scanner);
-				Symbol symbol = parser.parse();
-				LibicRoot = (ICClass) symbol.value;
-				ICRoot.AddNewClass(LibicRoot);
-			} catch (Exception e) {
-				System.err.println(e.getMessage());
-				return;
-			}
-			System.out.println("libic file parsed successfully");
-		}
-		
+		System.out.println("Parsed "+args[0]+" successfully!");
+
 		if (print_ast){
 			PrettyPrinter printer = new PrettyPrinter(args[0]);
             System.out.println(ICRoot.accept(printer));

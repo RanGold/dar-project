@@ -20,8 +20,8 @@ public class LexicalError extends Exception {
 	
 	public String toString() {
 		if (value==null)
-			return line + ": "  + "Lexical error: " + this.getMessage();
+			return line + ": "  + "Lexical error: " + super.getMessage();
 		else
-			return line + ": " + "Lexical error: " + this.getMessage() + " '" + this.value + "'";
+			return line + ": " + "Lexical error: " + super.getMessage() + " '" + this.value + "'";
 	}
 }
