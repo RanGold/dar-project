@@ -82,7 +82,7 @@ package IC.Parser;
 <YYINITIAL> "null"	 	{ return new Token(sym.NULL,yyline ); }
 
 /* Integer */
-<YYINITIAL> [0]+	{ return new Token(sym.INTEGER,yyline,yytext()); }
+<YYINITIAL> [0]+	{ return new Token(sym.INTEGER,yyline,new Integer(0)); }
 <YYINITIAL> [1-9][0-9]* { 
        if (yytext().length()>10) throw new LexicalError("Integer out of bound", yyline,yytext()); 
         try{

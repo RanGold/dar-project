@@ -255,52 +255,52 @@ statement_list ::=
 statement ::= location:l ASSIGN expr:e SEMI //changed from equal to assign !!!!!!!!!!!!
 			{: 
 				RESULT = new Assignment(l, e);
-				System.out.println("new statement");
+				System.out.println("new statement1");
 			:}
 			| call:c SEMI	
 			{: 
 				RESULT = new CallStatement(c);
-				System.out.println("new statement");
+				System.out.println("new statement2");
 			:}	
 			| RETURN:r SEMI
 			{: 
 				RESULT = new Return(rleft);
-				System.out.println("new statement");
+				System.out.println("new statement3");
 			:}			
 			| RETURN:r expr:e SEMI
 			{: 
 				RESULT = new Return(rleft,e);
-				System.out.println("new statement");
+				System.out.println("new statement4");
 			:}
-			| IF LP expr:e RP statement:s SEMI
+			| IF LP expr:e RP statement:s
 			{:
 				RESULT = new If(e, s);
-				System.out.println("new statement");
+				System.out.println("new statement5");
 			:}
-			| IF LP expr:e RP statement:s1 ELSE statement:s2 SEMI
+			| IF LP expr:e RP statement:s1 ELSE statement:s2
 			{:
 				RESULT = new If(e, s1, s2);
-				System.out.println("new statement");
+				System.out.println("new statement6");
 			:}  			
-			| WHILE LP expr:e RP statement:s SEMI
+			| WHILE LP expr:e RP statement:s 
 			{:
 				RESULT = new While(e, s);
-				System.out.println("new statement");
+				System.out.println("new statement7");
 			:}
 			| BREAK:b SEMI
 			{: 
 				RESULT = new Break(bleft);
-				System.out.println("new statement");
+				System.out.println("new statement8");
 			:}
 			| CONTINUE:c SEMI
 			{: 
 				RESULT = new Continue(cleft);
-				System.out.println("new statement");
+				System.out.println("new statement9");
 			:}
 			| LCBR:l statement_list:sl RCBR
 			{: 
 				RESULT = new StatementsBlock(lleft,sl);
-				System.out.println("new statement");
+				System.out.println("new statement10");
 			:}
 			| type:t ID:i SEMI
 			{:
@@ -310,7 +310,7 @@ statement ::= location:l ASSIGN expr:e SEMI //changed from equal to assign !!!!!
 			| type:t ID:i ASSIGN expr:e SEMI
 			{:
 				RESULT = new LocalVariable(t, i, e);
-				System.out.println("new statement");
+				System.out.println("new statement11");
 			:};
 
 expr ::= location:l
