@@ -312,11 +312,6 @@ statement_short ::= location:l ASSIGN expr:e SEMI //changed from equal to assign
 					RESULT = new StatementsBlock(lleft,sl);
 					//System.out.println("new statement10");
 				:};
-				//|
-				//error:e SEMI
-				//{:
-				//	RESULT=e;
-				//:};
 
 statement ::= statement_short:ss
 			{:
