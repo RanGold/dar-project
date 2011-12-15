@@ -11,27 +11,20 @@ public class Token extends Symbol {
 	}
 
 	public Token(int id, int line, Object value) {
-		super(id,line+1,0, value);
+		super(id, line + 1, 0, value);
 		this.val = true;
 	}
 
 	public String toString() {
-		if (val)
-			return left + ": " + getSymName(this.sym) + "("
+		if (this.val) {
+			return this.left + ": " + getSymName(this.sym) + "("
 					+ this.value.toString() + ")";
-		else
-			return left + ": " + getSymName(this.sym);
+		} else {
+			return this.left + ": " + getSymName(this.sym);
+		}
 	}
 
-	// public String toString() {
-	// if (val)
-	// return this.line + ": " + this.sym + "(" + this.value.toString()
-	// + ")";
-	// else
-	// return this.line + ": " + this.sym;
-	// }
-
-	// what to do with the LibraraySym?
+	// TODO: what to do with the LibraraySym?
 	public String getSymName(int s) {
 		switch (s) {
 		case IC.Parser.sym.DIVIDE:

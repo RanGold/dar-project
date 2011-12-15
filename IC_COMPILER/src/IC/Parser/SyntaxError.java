@@ -6,26 +6,28 @@ import java_cup.runtime.Symbol;
 public class SyntaxError extends Exception {
 	private int line;
 	private Symbol tok;
-	private boolean m;
+	private boolean isMessage;
 
 	public SyntaxError(String message, int line) {
 		super(message);
-		m=true;
-		this.line=line;
+		this.isMessage = true;
+		this.line = line;
 	}
 
 	public SyntaxError(Symbol tok) {
-		m=false;
-		this.tok=tok;
+		this.isMessage = false;
+		this.tok = tok;
 	}
 
-	public String getMessage(){
+	public String getMessage() {
 		return toString();
 	}
-	
+
 	public String toString() {
-		if (m)
-			return "Syntax error: "+super.getMessage()+" (line: )"+line;
-		return "Syntax error: "+tok.toString();
+		if (this.isMessage) {
+			return "Syntax error: " + super.getMessage() + " (line: )" + line;
+		} else {
+			return "Syntax error: " + tok.toString();
+		}
 	}
 }
