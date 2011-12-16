@@ -66,7 +66,7 @@ public class Compiler {
 			System.out.println("Parsed " + pathTOic + " successfully!");
 		} catch (Exception e) {
 			System.err.println(e.getMessage());
-			return;
+			System.exit(0);
 		}
 
 		// If specified, parse the libic file
@@ -80,12 +80,15 @@ public class Compiler {
 				System.out.println("Parsed " + pathTOlibic + " successfully!");
 			} catch (Exception e) {
 				System.err.println(e.getMessage());
-				return;
+				System.exit(0);
+				//return;
 			}
 		}
 		
 		if (print_ast) {
-			PrettyPrinter printer = new PrettyPrinter(pathTOic, false);
+			/* true - prints the tree with tabs
+			 * false - prints the tree without tabs */
+			PrettyPrinter printer = new PrettyPrinter(pathTOic, true);
 			System.out.println(ICRoot.accept(printer));
 		}
 	}

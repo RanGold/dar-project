@@ -86,7 +86,7 @@ package IC.Parser;
 <YYINITIAL> [1-9][0-9]* { 
        if (yytext().length()>10) throw new LexicalError("Integer out of bound", yyline,yytext()); 
         try{
-        		Integer.parseInt("-" + yytext());
+        		Integer.parseInt(yytext());
         		return new Token(sym.INTEGER,yyline,new Integer(yytext())); 
         	}catch(NumberFormatException e){
         	        throw new LexicalError("Integer out of bound", yyline,yytext());  

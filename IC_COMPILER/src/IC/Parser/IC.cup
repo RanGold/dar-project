@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.LinkedList;
 
 action code {:
-	private boolean isDebug = true;
+	private boolean isDebug = false;
 	
 	private void print_debug_info(String str) {
 		if (this.isDebug) {
@@ -18,7 +18,10 @@ action code {:
 
 parser code {: 
 	public void syntax_error(Symbol cur_token) {
-		report_error("Syntax error at line " + cur_token.toString(), null);
+		//report_error("Syntax error at line " + cur_token.toString(), null);
+	}
+	public void unrecovered_syntax_error(Symbol cur_token) throws SyntaxError {
+		throw new SyntaxError(cur_token);
 	}
 :};
 
@@ -63,17 +66,18 @@ non terminal Statement statement_short;
 
 //////////////////////////
 // Precedence declarations
+
+
 precedence right ASSIGN;
 precedence left LOR;
 precedence left LAND;
-precedence left EQUAL, NEQUAL;
-precedence left GT, GTE, LT, LTE;
+precedence nonassoc EQUAL, NEQUAL;
+precedence nonassoc GT, GTE, LT, LTE;
 precedence left PLUS, MINUS;
 precedence left MULTIPLY, DIVIDE, MOD;
-precedence right UMINUS, LNEG;
+precedence left UMINUS, LNEG;//we want to check it
 precedence left LP,RP,LB,RB,DOT;
-precedence left IF, ELSE;
-
+precedence left ELSE;
 //////////////
 // The grammar
 
@@ -225,12 +229,12 @@ type ::= INT:integ
 		| BOOLEAN:bool
 			{:
 				RESULT = new PrimitiveType(boolleft, DataTypes.BOOLEAN); 
-				print_debug_info("new type string "); 
+				print_debug_info("new type bool "); 
 			:}
 		| CLASS_ID:class_id
 			{: 
 				RESULT = new UserType(class_idleft, class_id); 
-				print_debug_info("new type string "); 
+				print_debug_info("new type classid "); 
 			:}
 		| type:t LB RB
 			{:	
@@ -271,7 +275,7 @@ statement_list ::=
 					print_debug_info("new statemrnt to statemtn list");
 				:};
 
-statement_short ::= location:l ASSIGN expr:e SEMI // TODO: changed from equal to assign !!!!!!!!!!!!
+statement_short ::= location:l ASSIGN expr:e SEMI
 				{: 
 					RESULT = new Assignment(l, e);
 					print_debug_info("new statement1");
@@ -320,8 +324,8 @@ statement_short ::= location:l ASSIGN expr:e SEMI // TODO: changed from equal to
 				{: 
 					RESULT = new StatementsBlock(lleft,sl);
 					print_debug_info("new statement10");
-				:}
-				| error SEMI;
+				:};
+				//| error SEMI;
 
 statement ::= statement_short:ss
 			{:
