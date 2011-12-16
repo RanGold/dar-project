@@ -7,11 +7,10 @@ import java.util.List;
 import java.util.LinkedList;
 
 parser code {: 
-	public void unrecovered_syntax_error(Symbol cur_token) throws SyntaxError{
-		throw new SyntaxError(cur_token);
+	public void syntax_error(Symbol cur_token) {
+		report_error("Syntax error at line " + cur_token.toString(), null);
 	}
-	public void syntax_error(Symbol current_token){}
- :};
+:};
 
 ////////////////////////////////////////////
 // Symbol list (terminals and non-terminals)

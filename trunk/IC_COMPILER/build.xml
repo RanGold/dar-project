@@ -35,8 +35,13 @@
 			<arg value="-dump" />
 			<arg value="${src}/IC/Parser/IC.cup" />
 		</java>
+		
 		<replace file="Parser.java" value='@SuppressWarnings(value={"all"}) class Parser'>
 			<replacetoken>class Parser</replacetoken>
+		</replace>
+		
+		<replace file="Parser.java" value='@SuppressWarnings(value={"all"}) class CUP$Parser$actions'>
+			<replacetoken>class CUP$Parser$actions</replacetoken>
 		</replace>
 
 		<move file="Parser.java" todir="${src}/IC/Parser" />
@@ -61,6 +66,10 @@
 
 		<replace file="LibraryParser.java" value='@SuppressWarnings(value={"all"}) class LibraryParser'>
 			<replacetoken>class LibraryParser</replacetoken>
+		</replace>
+		
+		<replace file="LibraryParser.java" value='@SuppressWarnings(value={"all"}) class CUP$LibraryParser$actions'>
+			<replacetoken>class CUP$LibraryParser$actions</replacetoken>
 		</replace>
 
 		<move file="LibraryParser.java" todir="${src}/IC/Parser" />

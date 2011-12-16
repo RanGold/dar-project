@@ -1,12 +1,14 @@
 package IC;
 
-import java.io.*;
+import java.io.FileReader;
 
-import IC.AST.*;
-import IC.Parser.*;
-import java_cup.runtime.Symbol;
+import IC.AST.ICClass;
+import IC.AST.PrettyPrinter;
+import IC.AST.Program;
+import IC.Parser.Lexer;
+import IC.Parser.LibraryParser;
+import IC.Parser.Parser;
 
-//TODO: notice: our directory structure as of the moment is incorrect!!
 // TODO : fix order of input parameters can vary
 public class Compiler {
 
@@ -25,8 +27,7 @@ public class Compiler {
 					System.err.println("can't use the -L flag more than once");
 					return;
 				} else if (!seen_ICpath) {
-					System.err
-							.println("Path to IC file must appear before the -L flag");
+					System.err.println("Path to IC file must appear before the -L flag");
 					return;
 				}
 				if (args[i].length() == 2) {
@@ -43,8 +44,7 @@ public class Compiler {
 				print_ast = true;
 			} else {
 				if (seen_ICpath) {
-					System.err
-							.println("Illegal input, expected: java IC.Compiler <file.ic> [ -L</path/to/libic.sig> ] [ -print-ast ]");
+					System.err.println("Usage: java IC.Compiler <file.ic> [-L</path/to/libic.sig>] [-print-ast]");
 					return;
 				}
 				seen_ICpath = true;
@@ -57,41 +57,35 @@ public class Compiler {
 			return;
 		}
 
-		ICClass LibicRoot;
-		// if specified, parse the libic file
+		// Parse the IC file
+		Program ICRoot = null;
+		try {
+			FileReader txtFile = new FileReader(pathTOic);
+			Lexer scanner = new Lexer(txtFile);
+			Parser parser = new Parser(scanner);
+			ICRoot = (Program) parser.parse().value;
+			System.out.println("Parsed " + pathTOic + " successfully!");
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+			return;
+		}
+
+		// If specified, parse the libic file
 		if (parse_libic) {
 			try {
 				FileReader txtFile = new FileReader(pathTOlibic);
 				Lexer scanner = new Lexer(txtFile);
 				LibraryParser parser = new LibraryParser(scanner);
-				Symbol symbol = parser.parse();
-				LibicRoot = (ICClass) symbol.value;
-				// ICRoot.AddNewClass(LibicRoot);
+				ICClass LibicRoot = (ICClass) parser.parse().value;
+				// TODO : Ask Guy Golan if thsi add is ok
+				ICRoot.getClasses().add(LibicRoot);
+				System.out.println("Parsed " + pathTOlibic + " successfully!");
 			} catch (Exception e) {
 				System.err.println(e.getMessage());
 				return;
 			}
-			System.out.println("Parsed " + pathTOlibic + " successfully!");
-			if (print_ast) {
-				PrettyPrinter printer = new PrettyPrinter(pathTOlibic);
-				System.out.println(LibicRoot.accept(printer));
-			}
 		}
-
-		Program ICRoot = null;
-		// parse the ic file
-		try {
-			FileReader txtFile = new FileReader(pathTOic);
-			Lexer scanner = new Lexer(txtFile);
-			Parser parser = new Parser(scanner);
-			Symbol symbol = parser.parse();
-			ICRoot = (Program) symbol.value;
-		} catch (Exception e) {
-			System.err.println(e.getMessage());
-			return;
-		}
-		System.out.println("Parsed " + pathTOic + " successfully!");
-
+		
 		if (print_ast) {
 			PrettyPrinter printer = new PrettyPrinter(pathTOic);
 			System.out.println(ICRoot.accept(printer));

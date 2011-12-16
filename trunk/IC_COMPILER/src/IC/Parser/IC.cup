@@ -7,19 +7,20 @@ import java.util.List;
 import java.util.LinkedList;
 
 action code {:
-	public void print_debug_info(String str) {
-		if (false) {
+	private boolean isDebug = true;
+	
+	private void print_debug_info(String str) {
+		if (this.isDebug) {
 			System.out.println(str);
 		}	
-	} 
+	}
 :};
 
 parser code {: 
-	public void unrecovered_syntax_error(Symbol cur_token) throws SyntaxError{
-		throw new SyntaxError(cur_token);
+	public void syntax_error(Symbol cur_token) {
+		report_error("Syntax error at line " + cur_token.toString(), null);
 	}
-	//public void syntax_error(Symbol current_token){}
- :};
+:};
 
 ////////////////////////////////////////////
 // Symbol list (terminals and non-terminals)
@@ -317,7 +318,8 @@ statement_short ::= location:l ASSIGN expr:e SEMI // TODO: changed from equal to
 				{: 
 					RESULT = new StatementsBlock(lleft,sl);
 					print_debug_info("new statement10");
-				:};
+				:}
+				| error SEMI;
 
 statement ::= statement_short:ss
 			{:
