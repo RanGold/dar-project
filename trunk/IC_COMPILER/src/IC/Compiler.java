@@ -9,7 +9,7 @@ import IC.Parser.Lexer;
 import IC.Parser.LibraryParser;
 import IC.Parser.Parser;
 
-public class Compiler {
+public class Compiler{
 
 	public static void main(String[] args) {
 		boolean parse_libic = false, print_ast = false, seen_ICpath = false;
