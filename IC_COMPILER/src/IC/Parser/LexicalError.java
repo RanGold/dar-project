@@ -21,9 +21,9 @@ public class LexicalError extends Exception {
 
 	public String toString() {
 		if (value == null) {
-			return line + ": " + "Lexical error: " + super.getMessage();
+			return "Lexical error at line " + line + ": " + super.getMessage();
 		} else {
-			return line + ": " + "Lexical error: " + super.getMessage() + " '"
+			return "Lexical error at line " + line + ": " + super.getMessage() + " '"
 					+ this.value + "'";
 		}
 	}

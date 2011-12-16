@@ -25,9 +25,9 @@ public class SyntaxError extends Exception {
 
 	public String toString() {
 		if (this.isMessage) {
-			return "Syntax error at line "+ line + ":"+ super.getMessage();
+			return "Syntax error at line " + line + ": " + super.getMessage();
 		} else {
-			return "Syntax error at line "+ tok.toString();
+			return "Syntax error at line " + tok.toString();
 		}
 	}
 }
