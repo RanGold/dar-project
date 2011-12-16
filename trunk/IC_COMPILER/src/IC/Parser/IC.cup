@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.LinkedList;
 
 action code {:
-	private boolean isDebug = false;
+	private boolean isDebug = true;
 	
 	private void print_debug_info(String str) {
 		if (this.isDebug) {
@@ -18,9 +18,14 @@ action code {:
 
 parser code {: 
 	public void syntax_error(Symbol cur_token) {
+		// TODO : delete contents if no error recovery
 		//report_error("Syntax error at line " + cur_token.toString(), null);
 	}
-	public void unrecovered_syntax_error(Symbol cur_token) throws SyntaxError {
+	
+	public void unrecovered_syntax_error(Symbol cur_token) throws Exception {
+		// TODO : which is better?
+		//report_fatal_error("Syntax error at line " + cur_token.toString(), null);
+		done_parsing();
 		throw new SyntaxError(cur_token);
 	}
 :};
@@ -75,7 +80,7 @@ precedence nonassoc EQUAL, NEQUAL;
 precedence nonassoc GT, GTE, LT, LTE;
 precedence left PLUS, MINUS;
 precedence left MULTIPLY, DIVIDE, MOD;
-precedence left UMINUS, LNEG;//we want to check it
+precedence left UMINUS, LNEG; // TODO: we want to check it
 precedence left LP,RP,LB,RB,DOT;
 precedence left ELSE;
 //////////////
@@ -325,7 +330,6 @@ statement_short ::= location:l ASSIGN expr:e SEMI
 					RESULT = new StatementsBlock(lleft,sl);
 					print_debug_info("new statement10");
 				:};
-				//| error SEMI;
 
 statement ::= statement_short:ss
 			{:
