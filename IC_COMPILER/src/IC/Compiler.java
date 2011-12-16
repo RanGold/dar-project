@@ -9,12 +9,11 @@ import IC.Parser.Lexer;
 import IC.Parser.LibraryParser;
 import IC.Parser.Parser;
 
-// TODO : fix order of input parameters can vary
 public class Compiler {
 
 	public static void main(String[] args) {
 		boolean parse_libic = false, print_ast = false, seen_ICpath = false;
-		String pathTOlibic = "", pathTOic = "";
+		String pathTOlibic = null, pathTOic = null;
 
 		if ((args.length == 0) || (args.length > 3)) {
 			System.err.println("Usage: java IC.Compiler <file.ic> [-L</path/to/libic.sig>] [-print-ast]");
@@ -77,7 +76,6 @@ public class Compiler {
 				Lexer scanner = new Lexer(txtFile);
 				LibraryParser parser = new LibraryParser(scanner);
 				ICClass LibicRoot = (ICClass) parser.parse().value;
-				// TODO : Ask Guy Golan if thsi add is ok
 				ICRoot.getClasses().add(LibicRoot);
 				System.out.println("Parsed " + pathTOlibic + " successfully!");
 			} catch (Exception e) {
@@ -87,7 +85,7 @@ public class Compiler {
 		}
 		
 		if (print_ast) {
-			PrettyPrinter printer = new PrettyPrinter(pathTOic);
+			PrettyPrinter printer = new PrettyPrinter(pathTOic, false);
 			System.out.println(ICRoot.accept(printer));
 		}
 	}

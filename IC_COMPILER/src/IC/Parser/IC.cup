@@ -77,6 +77,8 @@ precedence left IF, ELSE;
 //////////////
 // The grammar
 
+start with program;
+
 //program can have zero classes
 program ::= {: 
 				RESULT = new Program(new LinkedList<ICClass>()); 
@@ -260,7 +262,7 @@ formal_list ::= formal:f
 statement_list ::= 
 				{:
 					RESULT = new LinkedList<Statement>();
-					print_debug_info("new empty statemrnt to statemtn list");
+					print_debug_info("new empty statemrnt to statment list");
 				:}
 				| statement_list:sl statement:s
 				{:
