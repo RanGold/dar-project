@@ -11,6 +11,8 @@ public class PrettyPrinter implements Visitor {
 	private int depth = 0; // depth of indentation
 
 	private String ICFilePath;
+	
+	private boolean doIndents;
 
 	/**
 	 * Constructs a new pretty printer visitor.
@@ -18,15 +20,18 @@ public class PrettyPrinter implements Visitor {
 	 * @param ICFilePath
 	 *            The path + name of the IC file being compiled.
 	 */
-	public PrettyPrinter(String ICFilePath) {
+	public PrettyPrinter(String ICFilePath, boolean doIndents) {
 		this.ICFilePath = ICFilePath;
+		this.doIndents = doIndents;
 	}
 
 	private void indent(StringBuffer output, ASTNode node) {
 		output.append("\n");
-		// TODO : Ask Guy Golan
-		//for (int i = 0; i < depth; ++i)
-			///output.append(" "); //TODO: FIX
+		if (this.doIndents) {
+			for (int i = 0; i < depth; ++i) {
+				output.append(" ");
+			}
+		}
 		if (node != null)
 			output.append(node.getLine() + ": ");
 	}
