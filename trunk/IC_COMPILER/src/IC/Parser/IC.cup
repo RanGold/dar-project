@@ -25,6 +25,7 @@ parser code {:
 	public void unrecovered_syntax_error(Symbol cur_token) throws Exception {
 		// TODO : which is better?
 		//report_fatal_error("Syntax error at line " + cur_token.toString(), null);
+		report_error();
 		done_parsing();
 		throw new SyntaxError(cur_token);
 	}
