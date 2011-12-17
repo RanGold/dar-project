@@ -66,7 +66,7 @@ public class Compiler{
 			System.out.println("Parsed " + pathTOic + " successfully!");
 		} catch (Exception e) {
 			System.err.println(e.getMessage());
-			System.exit(0);
+			return;
 		}
 
 		// If specified, parse the libic file
@@ -76,12 +76,11 @@ public class Compiler{
 				Lexer scanner = new Lexer(txtFile);
 				LibraryParser parser = new LibraryParser(scanner);
 				ICClass LibicRoot = (ICClass) parser.parse().value;
-				ICRoot.getClasses().add(LibicRoot);
+				ICRoot.getClasses().add(0,LibicRoot);
 				System.out.println("Parsed " + pathTOlibic + " successfully!");
 			} catch (Exception e) {
 				System.err.println(e.getMessage());
-				System.exit(0);
-				//return;
+				return;
 			}
 		}
 		
