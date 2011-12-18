@@ -9,7 +9,7 @@ import IC.Parser.Lexer;
 import IC.Parser.LibraryParser;
 import IC.Parser.Parser;
 
-public class Compiler{
+public class Compiler {
 
 	public static void main(String[] args) {
 		boolean parse_libic = false, print_ast = false, seen_ICpath = false;
@@ -76,7 +76,7 @@ public class Compiler{
 				Lexer scanner = new Lexer(txtFile);
 				LibraryParser parser = new LibraryParser(scanner);
 				ICClass LibicRoot = (ICClass) parser.parse().value;
-				ICRoot.getClasses().add(0,LibicRoot);
+				ICRoot.getClasses().add(0, LibicRoot);
 				System.out.println("Parsed " + pathTOlibic + " successfully!");
 			} catch (Exception e) {
 				System.err.println(e.getMessage());
