@@ -8,13 +8,9 @@ import java.util.LinkedList;
 
 parser code {: 
 	public void syntax_error(Symbol cur_token) {
-		// TODO : delete contents if no error recovery
-		//report_error("Syntax error at line " + cur_token.toString(), null);
 	}
 	
 	public void unrecovered_syntax_error(Symbol cur_token) throws SyntaxError {
-		// TODO : which is better?
-		//report_fatal_error("Syntax error at line " + cur_token.toString(), null);
 		done_parsing();
 		throw new SyntaxError(cur_token);
 	}
