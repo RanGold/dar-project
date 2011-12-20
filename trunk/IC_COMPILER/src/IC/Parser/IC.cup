@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.LinkedList;
 
 action code {:
-	private boolean isDebug = true;
+	private boolean isDebug = false;
 	
 	private void print_debug_info(String str) {
 		if (this.isDebug) {
@@ -18,14 +18,9 @@ action code {:
 
 parser code {: 
 	public void syntax_error(Symbol cur_token) {
-		// TODO : delete contents if no error recovery
-		//report_error("Syntax error at line " + cur_token.toString(), null);
 	}
 	
 	public void unrecovered_syntax_error(Symbol cur_token) throws Exception {
-		// TODO : which is better?
-		//report_fatal_error("Syntax error at line " + cur_token.toString(), null);
-		report_error();
 		done_parsing();
 		throw new SyntaxError(cur_token);
 	}
