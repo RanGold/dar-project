@@ -76,7 +76,7 @@ precedence nonassoc EQUAL, NEQUAL;
 precedence nonassoc GT, GTE, LT, LTE;
 precedence left PLUS, MINUS;
 precedence left MULTIPLY, DIVIDE, MOD;
-precedence left UMINUS, LNEG; // TODO: we want to check it
+precedence left UMINUS, LNEG;
 precedence left LP,RP,LB,RB,DOT;
 precedence left ELSE;
 //////////////
