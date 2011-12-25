@@ -72,7 +72,7 @@ non terminal Statement statement_short;
 precedence right ASSIGN;
 precedence left LOR;
 precedence left LAND;
-precedence nonassoc EQUAL, NEQUAL;
+precedence left EQUAL, NEQUAL;
 precedence nonassoc GT, GTE, LT, LTE;
 precedence left PLUS, MINUS;
 precedence left MULTIPLY, DIVIDE, MOD;
