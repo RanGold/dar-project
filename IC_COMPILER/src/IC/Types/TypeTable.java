@@ -47,6 +47,8 @@ public class TypeTable {
 		return arrt;
 	}
 
+	// TODO : this is dependant on the order of calls, maybe there is no need for this
+	// TODO: We can set the superclass later for existing classes, and only check for circles each time
 	// Returns unique class type object
 	public static ClassType classType(String identifier, String superIdentifier, int line) throws SemanticError {
 		ClassType cls;
