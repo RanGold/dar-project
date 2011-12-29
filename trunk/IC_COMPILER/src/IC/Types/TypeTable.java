@@ -22,6 +22,7 @@ public class TypeTable {
 	private static Map<String, MethodType> uniqueMethodTypes = new HashMap<String, MethodType>();
 
 	// TODO : isn't true and false missing?
+	// TODO : maybe add a map for primitives?
 	// Primitive types
 	public static Type intType = new IntType();
 	public static Type boolType = new BoolType();
