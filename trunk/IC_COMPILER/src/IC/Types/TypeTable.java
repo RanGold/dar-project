@@ -59,7 +59,14 @@ public class TypeTable {
 			if (superIdentifier == null) {
 				cls = new ClassType(identifier, null);
 			} else if (uniqueClassTypes.containsKey(superIdentifier)) {
-				cls = new ClassType(identifier, uniqueClassTypes.get(superIdentifier));
+				ClassType superClass = uniqueClassTypes.get(superIdentifier);
+				cls = new ClassType(identifier, superClass);
+
+				// Checking if no circles in the class diagram
+				if (superClass.isSubType(cls)) {
+					throw new SemanticError("The superclass " + superIdentifier + " is a subclass of " + identifier, line);
+				}
+				
 			} else {
 				throw new SemanticError("The superclass " + superIdentifier + " doesn't exist for " + identifier, line);
 			}
