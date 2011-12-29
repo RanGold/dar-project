@@ -21,6 +21,7 @@ public class TypeTable {
 	// Maps identifiers to method types
 	private static Map<String, MethodType> uniqueMethodTypes = new HashMap<String, MethodType>();
 
+	// TODO : isn't true and false missing?
 	// Primitive types
 	public static Type intType = new IntType();
 	public static Type boolType = new BoolType();
