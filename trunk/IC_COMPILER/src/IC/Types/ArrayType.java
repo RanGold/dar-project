@@ -5,6 +5,7 @@ public class ArrayType extends Type {
 	private Type elemType;
 	
 	public ArrayType(Type elemType) {
+		super();
 		this.elemType = elemType;
 	}
 	

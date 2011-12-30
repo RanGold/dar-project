@@ -1,7 +1,6 @@
 package IC.Types;
 
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -9,8 +8,7 @@ import IC.SemanticChecks.SemanticError;
 
 public class TypeTable {
 	// Stores the table types' strings
-	private static List<MetaType> typesInTable = new LinkedList<MetaType>();
-	private static boolean isPrimitveAdded = false;
+	private static Map<String, Type> uniquePrimitveTypes = new HashMap<String, Type>();
 	
 	// Maps element types to array types
 	private static Map<Type, ArrayType> uniqueArrayTypes = new HashMap<Type, ArrayType>();
@@ -21,33 +19,25 @@ public class TypeTable {
 	// Maps identifiers to method types
 	private static Map<String, MethodType> uniqueMethodTypes = new HashMap<String, MethodType>();
 
-	// TODO : isn't true and false missing?
 	// TODO : maybe add a map for primitives?
 	// Primitive types
 	public static Type intType = new IntType();
 	public static Type boolType = new BoolType();
-	public static MetaType nullType = new NullType();
+	public static Type nullType = new NullType();
 	public static Type stringType = new StringType();
 	public static Type voidType = new VoidType();
 
 	// Returns unique array type object
 	public static ArrayType arrayType(Type elemType) {
-		ArrayType arrt;
-		
-		if (uniqueArrayTypes.containsKey(elemType)) {
-			// array type object already created – return it
-			arrt = uniqueArrayTypes.get(elemType);
-		} else {
+		if (!uniqueArrayTypes.containsKey(elemType)) {
 			// object doesn’t exist – create and return it
-			arrt = new ArrayType(elemType);
+			ArrayType arrt = new ArrayType(elemType);
 			uniqueArrayTypes.put(elemType, arrt);
 		}
 		
-		TypeTable.typesInTable.add(arrt);
-		return arrt;
+		return uniqueArrayTypes.get(elemType);
 	}
 
-	// TODO : this is dependant on the order of calls, maybe there is no need for this
 	// TODO: We can set the superclass later for existing classes, and only check for circles each time
 	// Returns unique class type object
 	public static ClassType classType(String identifier, String superIdentifier, int line) throws SemanticError {
@@ -56,6 +46,9 @@ public class TypeTable {
 		if (uniqueClassTypes.containsKey(identifier)) {
 			// class type object already created – return it
 			cls = uniqueClassTypes.get(identifier);
+			if (superIdentifier != null && cls.getSuperClass() == null) {
+				
+			}
 		} else {
 			// object doesn’t exist – create and return it
 			if (superIdentifier == null) {
@@ -65,7 +58,7 @@ public class TypeTable {
 				cls = new ClassType(identifier, superClass);
 
 				// Checking if no circles in the class diagram
-				if (superClass.isSubType(cls)) {
+				if (superClass.subtypeof(cls)) {
 					throw new SemanticError("The superclass " + superIdentifier + " is a subclass of " + identifier, line);
 				}
 				
@@ -76,7 +69,6 @@ public class TypeTable {
 			uniqueClassTypes.put(identifier, cls);
 		}
 		
-		TypeTable.typesInTable.add(cls);
 		return cls;
 	}
 	
@@ -85,47 +77,69 @@ public class TypeTable {
 		MethodType mtd = new MethodType(arguments, returnVal);
 		String identifier = (mtd).toString();
 		
-		if (uniqueMethodTypes.containsKey(identifier)) {
-			// class type object already created – return it
-			mtd = uniqueMethodTypes.get(identifier);
-		} else {
+		if (!uniqueMethodTypes.containsKey(identifier)) {
 			// object doesn’t exist – create and return it
 			uniqueMethodTypes.put(identifier, mtd);
 		}
 		
-		TypeTable.typesInTable.add(mtd);
-		return mtd;
+		return uniqueMethodTypes.get(identifier);
 	}
 	
 	private static void addPrimitveTypes() {
-		TypeTable.typesInTable.add(0, voidType);
-		TypeTable.typesInTable.add(0, stringType);
-		TypeTable.typesInTable.add(0, nullType);
-		TypeTable.typesInTable.add(0, boolType);
-		TypeTable.typesInTable.add(0, intType);
-		TypeTable.isPrimitveAdded = true;
+		if (!TypeTable.uniquePrimitveTypes.containsKey("int")) {
+			TypeTable.uniquePrimitveTypes.put("int", intType);
+		}
+		if (!TypeTable.uniquePrimitveTypes.containsKey("boolean")) {
+			TypeTable.uniquePrimitveTypes.put("boolean", boolType);
+		}
+		
+		if (!TypeTable.uniquePrimitveTypes.containsKey("null")) {
+			TypeTable.uniquePrimitveTypes.put("null", nullType);
+		}
+		
+		if (!TypeTable.uniquePrimitveTypes.containsKey("string")) {
+			TypeTable.uniquePrimitveTypes.put("string", stringType);
+		}
+		
+		if (!TypeTable.uniquePrimitveTypes.containsKey("void")) {
+			TypeTable.uniquePrimitveTypes.put("void", voidType);
+		}
 	}
 	
-	public static String GetString() {
-		if (!TypeTable.isPrimitveAdded) {
-			addPrimitveTypes();
+	private static void appendTypeString(Type type, StringBuilder sb) {
+		sb.append('\t');
+		sb.append(type.getTypeId());
+		sb.append(": ");
+		sb.append(type.getTypeClass().toString());
+		sb.append(" type: ");
+		sb.append(type.toString());
+		sb.append('\n');
+		
+		ClassType superClass;
+		if (type.getTypeClass() == TypeClass.Class && ((superClass = ((ClassType)type).getSuperClass()) != null)) {
+			sb.append(", Superclass ID:" + superClass.getTypeId());
 		}
+	}
+	
+	public static String getString() {
+		addPrimitveTypes();
 		
 		StringBuilder sb = new StringBuilder();
 		
-		int id = 1;
-		for (MetaType curType : TypeTable.typesInTable) {
-			sb.append(id);
-			sb.append(": ");
-			sb.append(curType.getTypeClass().toString());
-			sb.append(" type: ");
-			sb.append(curType.toString());
-			
-			ClassType superClass;
-			if (curType.getTypeClass() == TypeClass.Class && ((superClass = ((ClassType)curType).getSuperClass()) != null)) {
-				sb.append(", Superclass ID:" + (TypeTable.typesInTable.indexOf(superClass) + 1));
-			}
-			id++;
+		for (Type curType : TypeTable.uniquePrimitveTypes.values()) {
+			TypeTable.appendTypeString(curType, sb);
+		}
+		
+		for (Type curType : TypeTable.uniqueClassTypes.values()) {
+			TypeTable.appendTypeString(curType, sb);
+		}
+		
+		for (Type curType : TypeTable.uniqueArrayTypes.values()) {
+			TypeTable.appendTypeString(curType, sb);
+		}
+		
+		for (Type curType : TypeTable.uniqueMethodTypes.values()) {
+			TypeTable.appendTypeString(curType, sb);
 		}
 		
 		return sb.toString();
