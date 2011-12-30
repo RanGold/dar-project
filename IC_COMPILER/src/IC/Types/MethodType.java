@@ -3,12 +3,13 @@ package IC.Types;
 import java.util.LinkedList;
 import java.util.List;
 
-public class MethodType extends MetaType {
+public class MethodType extends Type {
 
 	private List<Type> arguments;
 	private Type returnVal;
 	
 	public MethodType(List<Type> arguments, Type returnVal) {
+		super();
 		this.arguments = new LinkedList<Type>(arguments);
 		this.returnVal = returnVal;
 	}
@@ -44,7 +45,7 @@ public class MethodType extends MetaType {
 	}
 
 	@Override
-	public boolean isSubType(Type t) {
+	public boolean subtypeof(Type t) {
 		return false;
 	}
 }

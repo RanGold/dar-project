@@ -6,6 +6,7 @@ public class ClassType extends Type {
 	private String identifier;
 	
 	public ClassType(String identifier, ClassType superClass) {
+		super();
 		this.identifier = identifier;
 		this.superClass = superClass;
 	}
@@ -16,7 +17,7 @@ public class ClassType extends Type {
 	}
 	
 	@Override
-	public boolean isSubType(Type t) {
+	public boolean subtypeof(Type t) {
 		if (!(t instanceof ClassType) || t == null) {
 			return false;
 		} else {
@@ -27,6 +28,10 @@ public class ClassType extends Type {
 
 	public ClassType getSuperClass() {
 		return this.superClass;
+	}
+	
+	public void setSuperClass(ClassType superClass) {
+		this.superClass = superClass;
 	}
 	
 	@Override
