@@ -1,7 +1,38 @@
 package IC.Types;
 
-import IC.DataTypes;
-import IC.AST.*;
+import IC.AST.ArrayLocation;
+import IC.AST.Assignment;
+import IC.AST.Break;
+import IC.AST.CallStatement;
+import IC.AST.Continue;
+import IC.AST.ExpressionBlock;
+import IC.AST.Field;
+import IC.AST.Formal;
+import IC.AST.ICClass;
+import IC.AST.If;
+import IC.AST.Length;
+import IC.AST.LibraryMethod;
+import IC.AST.Literal;
+import IC.AST.LocalVariable;
+import IC.AST.LogicalBinaryOp;
+import IC.AST.LogicalUnaryOp;
+import IC.AST.MathBinaryOp;
+import IC.AST.MathUnaryOp;
+import IC.AST.Method;
+import IC.AST.NewArray;
+import IC.AST.NewClass;
+import IC.AST.Program;
+import IC.AST.Return;
+import IC.AST.StatementsBlock;
+import IC.AST.StaticCall;
+import IC.AST.StaticMethod;
+import IC.AST.This;
+import IC.AST.UserType;
+import IC.AST.VariableLocation;
+import IC.AST.VirtualCall;
+import IC.AST.VirtualMethod;
+import IC.AST.Visitor;
+import IC.AST.While;
 import IC.SemanticChecks.SemanticError;
 
 public class TypeTableBuilderVisitor implements Visitor{
@@ -9,14 +40,25 @@ public class TypeTableBuilderVisitor implements Visitor{
 	@Override
 	public Object visit(Program program) {
 		for (ICClass icClass : program.getClasses()){
+			TypeTable.classType(icClass);
+		}
+		
+		for (ICClass icClass : program.getClasses()){
 			icClass.accept(this);
+		}
+		
+		try {
+			TypeTable.validateTypesTable();
+		} catch (SemanticError e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		return null;
 	}
 
 	@Override
-	public Object visit(ICClass icClass) throws SemanticError {
-		 TypeTable.classType(icClass.getName(), icClass.getSuperClassName(), icClass.getLine());
+	public Object visit(ICClass icClass) {
+		 TypeTable.classType(icClass);
 		 for (Field field : icClass.getFields()){
 			 field.accept(this);
 		 }
@@ -27,22 +69,8 @@ public class TypeTableBuilderVisitor implements Visitor{
 	}
 
 	@Override
-	public Object visit(Field field) throws SemanticError {
-		Type baseType;
-		if (field.getType().getName().equals(DataTypes.INT.getDescription()))
-			baseType=TypeTable.intType;
-		else if (field.getType().getName().equals(DataTypes.BOOLEAN.getDescription()))
-			baseType=TypeTable.boolType;
-		else if (field.getType().getName().equals(DataTypes.STRING.getDescription()))
-			baseType=TypeTable.stringType;
-		else 
-			baseType=TypeTable.classType(field.getType().getName(), null, field.getLine());
-		
-		for (int i=0;i<field.getType().getDimension();i++){
-			baseType=TypeTable.arrayType(baseType);
-		}
-		
-		return null;
+	public Object visit(Field field) {
+		return field.getType().accept(this);
 	}
 
 	@Override
@@ -71,14 +99,30 @@ public class TypeTableBuilderVisitor implements Visitor{
 
 	@Override
 	public Object visit(IC.AST.PrimitiveType type) {
-		// TODO Auto-generated method stub
-		return null;
+		if (type.getDimension() == 0) {
+			return  TypeTable.primitiveType(type.getName()); 
+		} else {
+			IC.AST.PrimitiveType newType = new IC.AST.PrimitiveType(type.getLine(), type.getDataType());
+			for (int i = 0; i < type.getDimension() - 1; i++) {
+				newType.incrementDimension();
+			}
+			
+			return TypeTable.arrayType((Type)newType.accept(this));
+		}
 	}
 
 	@Override
 	public Object visit(UserType type) {
-		// TODO Auto-generated method stub
-		return null;
+		if (type.getDimension() == 0) {
+			return  TypeTable.getClassType(type.getName()); 
+		} else {
+			UserType newType = new UserType(type.getLine(), type.getName());
+			for (int i = 0; i < type.getDimension() - 1; i++) {
+				newType.incrementDimension();
+			}
+			
+			return TypeTable.arrayType((Type)newType.accept(this));
+		}
 	}
 
 	@Override

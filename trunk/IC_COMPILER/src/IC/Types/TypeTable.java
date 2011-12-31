@@ -4,11 +4,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import IC.AST.ICClass;
 import IC.SemanticChecks.SemanticError;
 
 public class TypeTable {
 	// Stores the table types' strings
-	private static Map<String, Type> uniquePrimitveTypes = new HashMap<String, Type>();
+	private static Map<String, PrimitiveType> uniquePrimitveTypes = new HashMap<String, PrimitiveType>();
 	
 	// Maps element types to array types
 	private static Map<Type, ArrayType> uniqueArrayTypes = new HashMap<Type, ArrayType>();
@@ -21,11 +22,11 @@ public class TypeTable {
 
 	// TODO : maybe add a map for primitives?
 	// Primitive types
-	public static Type intType = new IntType();
-	public static Type boolType = new BoolType();
-	public static Type nullType = new NullType();
-	public static Type stringType = new StringType();
-	public static Type voidType = new VoidType();
+	public static PrimitiveType intType = new IntType();
+	public static PrimitiveType boolType = new BoolType();
+	public static PrimitiveType nullType = new NullType();
+	public static PrimitiveType stringType = new StringType();
+	public static PrimitiveType voidType = new VoidType();
 
 	// Returns unique array type object
 	public static ArrayType arrayType(Type elemType) {
@@ -37,39 +38,53 @@ public class TypeTable {
 		
 		return uniqueArrayTypes.get(elemType);
 	}
-
-	// TODO: We can set the superclass later for existing classes, and only check for circles each time
+	
+	// Returns existing unique class type object or null for non existing
+	public static ClassType getClassType(String identifier) {
+		if (!TypeTable.uniqueClassTypes.containsKey(identifier)) {
+			return null;
+		} else {
+			return TypeTable.uniqueClassTypes.get(identifier);
+		}
+	}
+	
 	// Returns unique class type object
-	public static ClassType classType(String identifier, String superIdentifier, int line) throws SemanticError {
+	public static ClassType classType(ICClass icClass) {
 		ClassType cls;
+		String identifier = icClass.getName();
 		
 		if (uniqueClassTypes.containsKey(identifier)) {
 			// class type object already created – return it
 			cls = uniqueClassTypes.get(identifier);
-			if (superIdentifier != null && cls.getSuperClass() == null) {
-				
-			}
 		} else {
 			// object doesn’t exist – create and return it
-			if (superIdentifier == null) {
-				cls = new ClassType(identifier, null);
-			} else if (uniqueClassTypes.containsKey(superIdentifier)) {
-				ClassType superClass = uniqueClassTypes.get(superIdentifier);
-				cls = new ClassType(identifier, superClass);
-
-				// Checking if no circles in the class diagram
-				if (superClass.subtypeof(cls)) {
-					throw new SemanticError("The superclass " + superIdentifier + " is a subclass of " + identifier, line);
-				}
-				
-			} else {
-				throw new SemanticError("The superclass " + superIdentifier + " doesn't exist for " + identifier, line);
-			}
-			
+			cls = new ClassType(icClass);
 			uniqueClassTypes.put(identifier, cls);
 		}
 		
 		return cls;
+	}
+	
+	public static void validateTypesTable() throws SemanticError {
+		// Checking for class existance
+		for (ClassType classType : TypeTable.uniqueClassTypes.values()) {
+			String superName = classType.getICClass().getSuperClassName();
+			if (superName != null && TypeTable.getClassType(superName) == null) {
+				throw new SemanticError("The superclass " + superName + " doesn't exist for " + classType.getICClass().getName(), 
+						classType.getICClass().getLine());
+			}
+		}
+		
+		// Checking if no circles in the class diagram
+		// This check is separated from the upper one, cause failure 
+		// at any stage on the upper one can lead to NullPointer Exception on this check
+		for (ClassType classType : TypeTable.uniqueClassTypes.values()) {
+			String superName = classType.getICClass().getSuperClassName();
+			if (superName != null && TypeTable.getClassType(superName).subtypeof(classType)) {
+				throw new SemanticError("The superclass " + superName + " is a subclass of " + classType.getICClass().getName(), 
+						classType.getICClass().getLine());
+			}
+		}
 	}
 	
 	// Returns unique method type object
@@ -83,6 +98,11 @@ public class TypeTable {
 		}
 		
 		return uniqueMethodTypes.get(identifier);
+	}
+	
+	public static PrimitiveType primitiveType(String identifier) {
+		addPrimitveTypes();
+		return TypeTable.uniquePrimitveTypes.get(identifier);
 	}
 	
 	private static void addPrimitveTypes() {
@@ -115,9 +135,9 @@ public class TypeTable {
 		sb.append(type.toString());
 		sb.append('\n');
 		
-		ClassType superClass;
-		if (type.getTypeClass() == TypeClass.Class && ((superClass = ((ClassType)type).getSuperClass()) != null)) {
-			sb.append(", Superclass ID:" + superClass.getTypeId());
+		String superClass;
+		if (type.getTypeClass() == TypeClass.Class && ((superClass = ((ClassType)type).getICClass().getSuperClassName()) != null)) {
+			sb.append(", Superclass ID:" + TypeTable.getClassType(superClass).getTypeId());
 		}
 	}
 	
