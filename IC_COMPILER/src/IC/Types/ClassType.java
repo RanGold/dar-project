@@ -1,19 +1,19 @@
 package IC.Types;
 
+import IC.AST.ICClass;
+
 public class ClassType extends Type {
 
-	private ClassType superClass;
-	private String identifier;
+	private ICClass icClass;
 	
-	public ClassType(String identifier, ClassType superClass) {
+	public ClassType(ICClass icClass) {
 		super();
-		this.identifier = identifier;
-		this.superClass = superClass;
+		this.icClass = icClass;
 	}
 	
 	@Override
 	public String toString() {
-		return this.identifier;
+		return this.icClass.getName();
 	}
 	
 	@Override
@@ -22,20 +22,17 @@ public class ClassType extends Type {
 			return false;
 		} else {
 			ClassType oc = (ClassType)t;
-			return (super.equals(oc) || (this.getSuperClass() != null && this.getSuperClass().equals(oc)));
+			return (super.equals(oc) || (this.icClass.getSuperClassName() != null && TypeTable.getClassType(this.icClass.getSuperClassName()).equals(oc)));
 		}
 	}
 
-	public ClassType getSuperClass() {
-		return this.superClass;
-	}
-	
-	public void setSuperClass(ClassType superClass) {
-		this.superClass = superClass;
-	}
 	
 	@Override
 	public TypeClass getTypeClass() {
 		return TypeClass.Class;
+	}
+	
+	public ICClass getICClass() {
+		return this.icClass;
 	}
 }
