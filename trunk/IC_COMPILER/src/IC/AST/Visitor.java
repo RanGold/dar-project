@@ -1,5 +1,7 @@
 package IC.AST;
 
+import IC.SemanticChecks.SemanticError;
+
 /**
  * AST visitor interface. Declares methods for visiting each type of AST node.
  * 
@@ -9,9 +11,9 @@ public interface Visitor {
 
 	public Object visit(Program program);
 
-	public Object visit(ICClass icClass);
+	public Object visit(ICClass icClass) throws SemanticError;
 
-	public Object visit(Field field);
+	public Object visit(Field field) throws SemanticError;
 
 	public Object visit(VirtualMethod method);
 
