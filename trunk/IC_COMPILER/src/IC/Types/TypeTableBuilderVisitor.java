@@ -28,13 +28,20 @@ public class TypeTableBuilderVisitor implements Visitor{
 
 	@Override
 	public Object visit(Field field) throws SemanticError {
-		if (field.getType().getDimension()==0){
-			String typeName = field.getType().getName();
-			if (!typeName.equals(DataTypes.INT) && !typeName.equals(DataTypes.BOOLEAN) && 
-					(!typeName.equals(DataTypes.STRING))){
-				TypeTable.classType(typeName, null, field.getLine());
-			}
+		Type baseType;
+		if (field.getType().getName().equals(DataTypes.INT.getDescription()))
+			baseType=TypeTable.intType;
+		else if (field.getType().getName().equals(DataTypes.BOOLEAN.getDescription()))
+			baseType=TypeTable.boolType;
+		else if (field.getType().getName().equals(DataTypes.STRING.getDescription()))
+			baseType=TypeTable.stringType;
+		else 
+			baseType=TypeTable.classType(field.getType().getName(), null, field.getLine());
+		
+		for (int i=0;i<field.getType().getDimension();i++){
+			baseType=TypeTable.arrayType(baseType);
 		}
+		
 		return null;
 	}
 
