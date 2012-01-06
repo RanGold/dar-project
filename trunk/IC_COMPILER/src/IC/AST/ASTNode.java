@@ -13,6 +13,9 @@ public abstract class ASTNode {
 	
 	/** reference to symbol table of enclosing scope **/
 	private SymbolTable enclosingScope;
+	
+	private IC.Types.Type enclosingType;
+
 	/**
 	 * Double dispatch method, to allow a visitor to visit a specific subclass.
 	 * 
@@ -37,12 +40,20 @@ public abstract class ASTNode {
 		return line;
 	}
 	
-	  /** returns symbol table of enclosing scope **/
-	  public SymbolTable getenclosingScope() {
-		  return enclosingScope;
-	  }
+	/** returns symbol table of enclosing scope **/
+	public SymbolTable getenclosingScope() {
+		return enclosingScope;
+	}
 
-	  public void addenclosingScope(SymbolTable enclosingScope) {
-		  this.enclosingScope =  enclosingScope;
-	  }
+	public void addenclosingScope(SymbolTable enclosingScope) {
+		this.enclosingScope =  enclosingScope;
+	}
+	
+	public IC.Types.Type getEnclosingType() {
+		return this.enclosingType;
+	}
+	
+	public void setEnclosingType(IC.Types.Type type) {
+		this.enclosingType = type;
+	}
 }
