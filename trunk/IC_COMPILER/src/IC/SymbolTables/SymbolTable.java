@@ -14,6 +14,11 @@ public class SymbolTable {
 	public SymbolTable(String id) {
 		this.id = id;
 		entries = new HashMap<String, Symbol>();
+		parentSymbolTable = null;
+	}
+	public SymbolTable(String id, SymbolTable parentSymbolTable ) {
+		this(id);
+		this.parentSymbolTable = parentSymbolTable;
 	}
 	public void addEntry(String key, Symbol data){
 		if (!entries.containsKey(key)){
@@ -22,6 +27,9 @@ public class SymbolTable {
 		else{
 			//TODO WHAT IF EXISTS????
 		}
+	}
+	public SymbolTable getParentSymbolTable(){
+		return parentSymbolTable;
 	}
 
 }

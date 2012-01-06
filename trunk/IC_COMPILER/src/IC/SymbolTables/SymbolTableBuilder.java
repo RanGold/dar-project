@@ -1,215 +1,253 @@
 package IC.SymbolTables;
 
-import IC.AST.ArrayLocation;
-import IC.AST.Assignment;
-import IC.AST.Break;
-import IC.AST.CallStatement;
-import IC.AST.Continue;
-import IC.AST.ExpressionBlock;
-import IC.AST.Field;
-import IC.AST.Formal;
-import IC.AST.ICClass;
-import IC.AST.If;
-import IC.AST.Length;
-import IC.AST.LibraryMethod;
-import IC.AST.Literal;
-import IC.AST.LocalVariable;
-import IC.AST.LogicalBinaryOp;
-import IC.AST.LogicalUnaryOp;
-import IC.AST.MathBinaryOp;
-import IC.AST.MathUnaryOp;
-import IC.AST.NewArray;
-import IC.AST.NewClass;
-import IC.AST.PrimitiveType;
-import IC.AST.Program;
-import IC.AST.Return;
-import IC.AST.StatementsBlock;
-import IC.AST.StaticCall;
-import IC.AST.StaticMethod;
-import IC.AST.This;
-import IC.AST.UserType;
-import IC.AST.VariableLocation;
-import IC.AST.VirtualCall;
-import IC.AST.VirtualMethod;
-import IC.AST.Visitor;
-import IC.AST.While;
+import IC.AST.*;
 
+public class SymbolTableBuilder implements Visitor {
 
-
-public class SymbolTableBuilder implements Visitor{
-
-	public Object visit(Program program){
+	public Object visit(Program program) {
 		SymbolTable st = new SymbolTable("Root");
 		String className;
-		for (ICClass icclass : program.getClasses()){
-			className = icclass.getName();
-			//st.addEntry(className,new Symbol(className,TypeTable.getClassType(className), Kind.CLASS));
+		for (ICClass icClass : program.getClasses()) {
+			className = icClass.getName();
+			st.addEntry(className,
+					new Symbol(className, icClass.getEnclosingType(),
+							Kind.CLASS));
 		}
 		program.addenclosingScope(st);
-		for (ICClass icclass : program.getClasses()){
-			icclass.accept(this);
+		for (ICClass icClass : program.getClasses()) {
+			SymbolTable stClass = new SymbolTable(icClass.getName(), st);
+			icClass.addenclosingScope(stClass);
+			icClass.accept(this);
 		}
+
 		return st;
 	}
-	//TODO - check what to do with static
+
+	// TODO - check what to do with static
+
 	public Object visit(ICClass icClass) {
-		SymbolTable st = new SymbolTable(icClass.getName());
+
 		String name;
-		for (Field field : icClass.getFields()){
-			
+		/* add fields and methods to table */
+		for (Field field : icClass.getFields()) {
+			name = field.getName();
+			icClass.getenclosingScope().addEntry(name,
+					new Symbol(name, field.getEnclosingType(), Kind.FIELD));
 		}
+		for (Method method : icClass.getMethods()) {
+			name = method.getName();
+			SymbolTable stMethod = new SymbolTable(name, icClass.getenclosingScope());
+			method.addenclosingScope(stMethod);
+			icClass.getenclosingScope().addEntry(name,
+					new Symbol(name, method.getEnclosingType(), Kind.METHOD));
+		}
+
+		/* call visitor on fields and methods */
+		for (Field field : icClass.getFields()){
+			field.accept(this);
+		}
+		for (Method method : icClass.getMethods()) {
+			method.accept(this);
+		}
+		return icClass.getenclosingScope();
+	}
+
+	public Object visit(Field field) {
+		return null;
+	}
+
+	private void methodVisit(Method method){
+		String name;
+		for (Formal formal : method.getFormals()){
+			name = formal.getName();
+			method.getenclosingScope().addEntry(name,
+					new Symbol(name, formal.getEnclosingType(), Kind.FORMAL));
+		}
+		for (Statement statement : method.getStatements()){
+			statement.addenclosingScope(method.getenclosingScope());
+			statement.accept(this);
+		}
+	}
+	
+	//TODO add ret and this
+	@Override
+	public Object visit(VirtualMethod method) {
+		methodVisit(method);
 		return null;
 	}
 
 	@Override
-	public Object visit(Field field) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
-	public Object visit(VirtualMethod method) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
 	public Object visit(StaticMethod method) {
-		// TODO Auto-generated method stub
+		methodVisit(method);
 		return null;
 	}
+
 	@Override
 	public Object visit(LibraryMethod method) {
-		// TODO Auto-generated method stub
+		methodVisit(method);
 		return null;
 	}
+
 	@Override
 	public Object visit(Formal formal) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(PrimitiveType type) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(UserType type) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(Assignment assignment) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(CallStatement callStatement) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(Return returnStatement) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(If ifStatement) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(While whileStatement) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(Break breakStatement) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(Continue continueStatement) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(StatementsBlock statementsBlock) {
-		// TODO Auto-generated method stub
-		return null;
+		SymbolTable st = new SymbolTable(statementsBlock.toString(),statementsBlock.getenclosingScope());
+		statementsBlock.addenclosingScope(st);
+		for(Statement statement : statementsBlock.getStatements()){
+			statement.addenclosingScope(st);
+			statement.accept(this);
+		}
+		return st;
 	}
+
 	@Override
 	public Object visit(LocalVariable localVariable) {
-		// TODO Auto-generated method stub
+		String name = localVariable.getName();
+		localVariable.getenclosingScope().addEntry(name, new Symbol(name,localVariable.getEnclosingType(),Kind.VAR));
 		return null;
 	}
+
 	@Override
 	public Object visit(VariableLocation location) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(ArrayLocation location) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(StaticCall call) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(VirtualCall call) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(This thisExpression) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(NewClass newClass) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(NewArray newArray) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(Length length) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(MathBinaryOp binaryOp) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(LogicalBinaryOp binaryOp) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(MathUnaryOp unaryOp) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(LogicalUnaryOp unaryOp) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(Literal literal) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public Object visit(ExpressionBlock expressionBlock) {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 }
