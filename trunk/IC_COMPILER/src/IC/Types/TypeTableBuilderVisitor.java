@@ -1,10 +1,15 @@
 package IC.Types;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import IC.AST.ArrayLocation;
 import IC.AST.Assignment;
 import IC.AST.Break;
+import IC.AST.Call;
 import IC.AST.CallStatement;
 import IC.AST.Continue;
+import IC.AST.Expression;
 import IC.AST.ExpressionBlock;
 import IC.AST.Field;
 import IC.AST.Formal;
@@ -23,6 +28,7 @@ import IC.AST.NewArray;
 import IC.AST.NewClass;
 import IC.AST.Program;
 import IC.AST.Return;
+import IC.AST.Statement;
 import IC.AST.StatementsBlock;
 import IC.AST.StaticCall;
 import IC.AST.StaticMethod;
@@ -33,27 +39,20 @@ import IC.AST.VirtualCall;
 import IC.AST.VirtualMethod;
 import IC.AST.Visitor;
 import IC.AST.While;
-import IC.SemanticChecks.SemanticError;
 
-public class TypeTableBuilderVisitor implements Visitor{
+public class TypeTableBuilderVisitor implements Visitor {
 	
 	@Override
 	public Object visit(Program program) {
-		for (ICClass icClass : program.getClasses()){
+		for (ICClass icClass : program.getClasses()) {
 			TypeTable.classType(icClass);
 		}
 		
-		for (ICClass icClass : program.getClasses()){
+		for (ICClass icClass : program.getClasses()) {
 			icClass.accept(this);
 		}
 		
-		try {
-			TypeTable.validateTypesTable();
-		} catch (SemanticError e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
+		return TypeTable.validateTypesTable();
 	}
 
 	@Override
@@ -62,9 +61,11 @@ public class TypeTableBuilderVisitor implements Visitor{
 		 for (Field field : icClass.getFields()){
 			 field.accept(this);
 		 }
+		 
 		 for (Method method : icClass.getMethods()){
 			 method.accept(this);
 		 }
+		 
 		 return null;
 	}
 
@@ -73,196 +74,210 @@ public class TypeTableBuilderVisitor implements Visitor{
 		return field.getType().accept(this);
 	}
 
+	private MethodType methodVisit(Method method) {
+		for (Statement stmt : method.getStatements()) {
+			stmt.accept(this);
+		}
+		
+		List<Type> formalTypes = new LinkedList<Type>();
+		for (Formal formal : method.getFormals()) {
+			formalTypes.add((Type)formal.accept(this));
+		}
+		
+		Type retVal = (Type)method.getType().accept(this);
+		
+		return TypeTable.methodType(formalTypes, retVal);
+	}
+	
 	@Override
 	public Object visit(VirtualMethod method) {
-		// TODO Auto-generated method stub
-		return null;
+		return this.methodVisit(method);
 	}
 
 	@Override
 	public Object visit(StaticMethod method) {
-		// TODO Auto-generated method stub
-		return null;
+		return this.methodVisit(method);
 	}
 
 	@Override
 	public Object visit(LibraryMethod method) {
-		// TODO Auto-generated method stub
-		return null;
+		return this.methodVisit(method);
 	}
 
 	@Override
 	public Object visit(Formal formal) {
-		// TODO Auto-generated method stub
-		return null;
+		return formal.getType().accept(this);
 	}
 
 	@Override
 	public Object visit(IC.AST.PrimitiveType type) {
-		if (type.getDimension() == 0) {
-			return  TypeTable.primitiveType(type.getName()); 
-		} else {
-			IC.AST.PrimitiveType newType = new IC.AST.PrimitiveType(type.getLine(), type.getDataType());
-			for (int i = 0; i < type.getDimension() - 1; i++) {
-				newType.incrementDimension();
-			}
-			
-			return TypeTable.arrayType((Type)newType.accept(this));
+		Type curType = TypeTable.primitiveType(type.getName());
+		for (int i = 0; i < type.getDimension(); i++) {
+			curType = TypeTable.arrayType(curType);
 		}
+
+		return curType;
 	}
 
 	@Override
 	public Object visit(UserType type) {
-		if (type.getDimension() == 0) {
-			return  TypeTable.getClassType(type.getName()); 
-		} else {
-			UserType newType = new UserType(type.getLine(), type.getName());
-			for (int i = 0; i < type.getDimension() - 1; i++) {
-				newType.incrementDimension();
-			}
-			
-			return TypeTable.arrayType((Type)newType.accept(this));
+		Type curType = TypeTable.getClassType(type);
+		for (int i = 0; i < type.getDimension(); i++) {
+			curType = TypeTable.arrayType(curType);
 		}
+
+		return curType;
 	}
 
 	@Override
 	public Object visit(Assignment assignment) {
-		// TODO Auto-generated method stub
-		return null;
+		assignment.getVariable().accept(this);
+		return assignment.getAssignment().accept(this);
 	}
 
 	@Override
 	public Object visit(CallStatement callStatement) {
-		// TODO Auto-generated method stub
+		for (Expression exp : callStatement.getCall().getArguments()) {
+			exp.accept(this);
+		}
+		
 		return null;
 	}
 
 	@Override
 	public Object visit(Return returnStatement) {
-		// TODO Auto-generated method stub
-		return null;
+		return returnStatement.getValue().accept(this);
 	}
 
 	@Override
 	public Object visit(If ifStatement) {
-		// TODO Auto-generated method stub
+		ifStatement.getCondition().accept(this);
+		if (ifStatement.hasElse()) {
+			ifStatement.getElseOperation().accept(this);
+		}
 		return null;
 	}
 
 	@Override
 	public Object visit(While whileStatement) {
-		// TODO Auto-generated method stub
-		return null;
+		return whileStatement.getCondition().accept(this);
 	}
 
 	@Override
 	public Object visit(Break breakStatement) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Object visit(Continue continueStatement) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Object visit(StatementsBlock statementsBlock) {
-		// TODO Auto-generated method stub
+		for (Statement statement : statementsBlock.getStatements()) {
+			statement.accept(this);
+		}
+
 		return null;
 	}
 
 	@Override
 	public Object visit(LocalVariable localVariable) {
-		// TODO Auto-generated method stub
+		localVariable.getType().accept(this);
+		if (localVariable.hasInitValue()) {
+			localVariable.getInitValue().accept(this);
+		}
+		
 		return null;
 	}
 
 	@Override
 	public Object visit(VariableLocation location) {
-		// TODO Auto-generated method stub
+		if (location.isExternal()) {
+			return location.getLocation().accept(this);
+		}
+		
 		return null;
 	}
 
 	@Override
 	public Object visit(ArrayLocation location) {
-		// TODO Auto-generated method stub
+		location.getArray().accept(this);
+		location.getIndex().accept(this);
+		
 		return null;
 	}
 
+	private void visitCall(Call call) {
+		for (Expression expression : call.getArguments()) {
+			expression.accept(this);
+		}
+	}
+	
 	@Override
 	public Object visit(StaticCall call) {
-		// TODO Auto-generated method stub
+		this.visitCall(call);
 		return null;
 	}
 
 	@Override
 	public Object visit(VirtualCall call) {
-		// TODO Auto-generated method stub
+		this.visitCall(call);
 		return null;
 	}
 
 	@Override
 	public Object visit(This thisExpression) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Object visit(NewClass newClass) {
-		// TODO Auto-generated method stub
-		return null;
+		return TypeTable.getClassType(newClass);
 	}
 
 	@Override
 	public Object visit(NewArray newArray) {
-		// TODO Auto-generated method stub
-		return null;
+		return newArray.getType().accept(this);
 	}
 
 	@Override
 	public Object visit(Length length) {
-		// TODO Auto-generated method stub
-		return null;
+		return length.getArray().accept(this);
 	}
 
 	@Override
 	public Object visit(MathBinaryOp binaryOp) {
-		// TODO Auto-generated method stub
+		binaryOp.getFirstOperand().accept(this);
+		binaryOp.getSecondOperand().accept(this);
 		return null;
 	}
 
 	@Override
 	public Object visit(LogicalBinaryOp binaryOp) {
-		// TODO Auto-generated method stub
+		binaryOp.getFirstOperand().accept(this);
+		binaryOp.getSecondOperand().accept(this);
 		return null;
 	}
 
 	@Override
 	public Object visit(MathUnaryOp unaryOp) {
-		// TODO Auto-generated method stub
-		return null;
+		return unaryOp.getOperand().accept(this);
 	}
 
 	@Override
 	public Object visit(LogicalUnaryOp unaryOp) {
-		// TODO Auto-generated method stub
-		return null;
+		return unaryOp.getOperand().accept(this);
 	}
 
 	@Override
 	public Object visit(Literal literal) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Object visit(ExpressionBlock expressionBlock) {
-		// TODO Auto-generated method stub
-		return null;
+		return expressionBlock.getExpression().accept(this);
 	}
-
-	
-
 }
