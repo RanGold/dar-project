@@ -90,6 +90,7 @@ public class TypeTableBuilderVisitor implements Visitor {
 		Type retVal = (Type)method.getType().accept(this);
 		
 		MethodType type = TypeTable.methodType(formalTypes, retVal);
+		method.setEnclosingType(type);
 		return type;
 	}
 	
@@ -110,7 +111,9 @@ public class TypeTableBuilderVisitor implements Visitor {
 
 	@Override
 	public Object visit(Formal formal) {
-		return formal.getType().accept(this);
+		Type retVal = (Type)formal.getType().accept(this);
+		formal.setEnclosingType(retVal);
+		return retVal;
 	}
 
 	@Override
@@ -156,6 +159,7 @@ public class TypeTableBuilderVisitor implements Visitor {
 	@Override
 	public Object visit(If ifStatement) {
 		ifStatement.getCondition().accept(this);
+		ifStatement.getOperation().accept(this);
 		if (ifStatement.hasElse()) {
 			ifStatement.getElseOperation().accept(this);
 		}
@@ -165,7 +169,9 @@ public class TypeTableBuilderVisitor implements Visitor {
 
 	@Override
 	public Object visit(While whileStatement) {
-		return whileStatement.getCondition().accept(this);
+		whileStatement.getCondition().accept(this);
+		whileStatement.getOperation().accept(this);
+		return null;
 	}
 
 	@Override

@@ -4,29 +4,52 @@ import IC.AST.*;
 
 public class SymbolTableBuilder implements Visitor {
 
+	private String path;
+	
+	private Kind method_kind(String method_name){
+		String virtual_method = "class IC.AST.VirtualMethod";
+		String static_method = "class IC.AST.StaticMethod";
+		String library_method = "class IC.AST.LibraryMethod";
+		if (method_name.equals(virtual_method))
+			return Kind.VIRTUAL_METHOD;
+		else if (method_name.equals(static_method))
+			return Kind.STATIC_METHOD;
+		else if (method_name.equals(library_method))
+			return Kind.LIBRARY_METHOD;
+		else
+			return Kind.METHOD;
+	}
+	
+	public SymbolTableBuilder(String path){
+		this.path = path;
+	}
+	
 	public Object visit(Program program) {
-		SymbolTable st = new SymbolTable("Root");
+		SymbolTable st = new SymbolTable(path,SymbolTableTypes.Global);
 		String className;
+		
 		for (ICClass icClass : program.getClasses()) {
 			className = icClass.getName();
 			st.addEntry(className,
 					new Symbol(className, icClass.getEnclosingType(),
 							Kind.CLASS));
 		}
+		
 		program.addenclosingScope(st);
 		for (ICClass icClass : program.getClasses()) {
-			SymbolTable stClass = new SymbolTable(icClass.getName(), st);
+			SymbolTable stClass = new SymbolTable(icClass.getName(), st,SymbolTableTypes.Class);
 			icClass.addenclosingScope(stClass);
+			st.addChild(stClass);
 			icClass.accept(this);
 		}
-
+		
 		return st;
 	}
 
 	// TODO - check what to do with static
 
 	public Object visit(ICClass icClass) {
-
+		
 		String name;
 		/* add fields and methods to table */
 		for (Field field : icClass.getFields()) {
@@ -36,10 +59,11 @@ public class SymbolTableBuilder implements Visitor {
 		}
 		for (Method method : icClass.getMethods()) {
 			name = method.getName();
-			SymbolTable stMethod = new SymbolTable(name, icClass.getenclosingScope());
+			SymbolTable stMethod = new SymbolTable(name, icClass.getenclosingScope(),SymbolTableTypes.Method);
+			icClass.getenclosingScope().addChild(stMethod);
 			method.addenclosingScope(stMethod);
 			icClass.getenclosingScope().addEntry(name,
-					new Symbol(name, method.getEnclosingType(), Kind.METHOD));
+					new Symbol(name, method.getEnclosingType(), method_kind(method.getClass().toString())));
 		}
 
 		/* call visitor on fields and methods */
@@ -125,15 +149,40 @@ public class SymbolTableBuilder implements Visitor {
 	}
 
 	@Override
-	public Object visit(If ifStatement) {
-		// TODO Auto-generated method stub
-		return null;
+	public Object visit(If ifStatement) {//TODO what about if (x==5) return false - meaning what about if with no {} should we open a block (new symbol table?)
+		SymbolTable stif = new SymbolTable(ifStatement.toString(),ifStatement.getenclosingScope(),SymbolTableTypes.StatementBlock);
+		ifStatement.getenclosingScope().addChild(stif);
+		
+		ifStatement.getCondition().addenclosingScope(stif);//TODO needed?
+		ifStatement.getCondition().accept(this);
+		
+		ifStatement.getOperation().addenclosingScope(stif);
+		ifStatement.getOperation().accept(this);
+		
+		if (ifStatement.hasElse()){
+			SymbolTable stelse = new SymbolTable(ifStatement.getElseOperation().toString(),ifStatement.getenclosingScope(),SymbolTableTypes.StatementBlock);
+			ifStatement.getenclosingScope().addChild(stelse);
+			ifStatement.getElseOperation().addenclosingScope(stelse);
+			ifStatement.getElseOperation().accept(this);
+		}
+		
+		ifStatement.addenclosingScope(stif);
+		return stif;
 	}
 
 	@Override
 	public Object visit(While whileStatement) {
-		// TODO Auto-generated method stub
-		return null;
+		SymbolTable st = new SymbolTable(whileStatement.toString(),whileStatement.getenclosingScope(),SymbolTableTypes.StatementBlock);
+		whileStatement.getenclosingScope().addChild(st);
+		whileStatement.addenclosingScope(st);
+		
+		whileStatement.getCondition().addenclosingScope(st);//TODO needed?
+		whileStatement.getCondition().accept(this);
+		
+		whileStatement.getOperation().addenclosingScope(st);
+		whileStatement.getOperation().accept(this);
+		
+		return st;
 	}
 
 	@Override
@@ -150,12 +199,14 @@ public class SymbolTableBuilder implements Visitor {
 
 	@Override
 	public Object visit(StatementsBlock statementsBlock) {
-		SymbolTable st = new SymbolTable(statementsBlock.toString(),statementsBlock.getenclosingScope());
+		SymbolTable st = new SymbolTable(statementsBlock.toString(),statementsBlock.getenclosingScope(),SymbolTableTypes.StatementBlock);
+		statementsBlock.getenclosingScope().addChild(st);
 		statementsBlock.addenclosingScope(st);
 		for(Statement statement : statementsBlock.getStatements()){
 			statement.addenclosingScope(st);
 			statement.accept(this);
 		}
+		
 		return st;
 	}
 

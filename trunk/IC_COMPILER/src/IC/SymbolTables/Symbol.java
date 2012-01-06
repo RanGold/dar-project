@@ -10,4 +10,13 @@ public class Symbol {
 		this.type = type;
 		this.kind=kind;
 	}
+	
+	@Override
+	public String toString(){
+		if (kind.equals(Kind.CLASS))
+			return kind+": "+type;
+		if (kind.equals(Kind.METHOD) || kind.equals(Kind.STATIC_METHOD) || kind.equals(Kind.VIRTUAL_METHOD) || kind.equals(Kind.LIBRARY_METHOD))
+			return kind+": "+id+" "+type;
+		return kind+": "+type+" "+id;
+	}
 }

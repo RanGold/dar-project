@@ -5,9 +5,12 @@ import java.io.FileReader;
 import IC.AST.ICClass;
 import IC.AST.PrettyPrinter;
 import IC.AST.Program;
+import IC.AST.Visitor;
 import IC.Parser.Lexer;
 import IC.Parser.LibraryParser;
 import IC.Parser.Parser;
+import IC.SymbolTables.SymbolTableBuilder;
+import IC.SymbolTables.SymbolTablePrint;
 import IC.Types.TypeTable;
 import IC.Types.TypeTableBuilderVisitor;
 
@@ -96,5 +99,11 @@ public class Compiler {
 		TypeTableBuilderVisitor t = new TypeTableBuilderVisitor();
 		t.visit(ICRoot);
 		System.out.println(TypeTable.getString(pathTOic));
+		
+		Visitor s=new SymbolTableBuilder(pathTOic);
+		s.visit(ICRoot);
+		
+		SymbolTablePrint pr = new SymbolTablePrint(ICRoot);
+		pr.printSymbolTable();
 	}
 }
