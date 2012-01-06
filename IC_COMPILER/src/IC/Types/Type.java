@@ -2,7 +2,7 @@ package IC.Types;
 
 public abstract class Type {
 	
-	private static int idCounter = 0;
+	private static int idCounter = 1;
 	private int typeId;
 	
 	public Type() {

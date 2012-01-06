@@ -14,11 +14,6 @@ public class SemanticError extends Exception {
 		this.line = line;
 	}
 
-	public SemanticError(Symbol tok) {
-		this.isMessage = false;
-		this.tok = tok;
-	}
-
 	public String getMessage() {
 		return toString();
 	}

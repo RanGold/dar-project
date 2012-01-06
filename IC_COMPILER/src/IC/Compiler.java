@@ -8,6 +8,8 @@ import IC.AST.Program;
 import IC.Parser.Lexer;
 import IC.Parser.LibraryParser;
 import IC.Parser.Parser;
+import IC.Types.TypeTable;
+import IC.Types.TypeTableBuilderVisitor;
 
 public class Compiler {
 
@@ -90,5 +92,9 @@ public class Compiler {
 			PrettyPrinter printer = new PrettyPrinter(pathTOic, true);
 			System.out.println(ICRoot.accept(printer));
 		}
+		
+		TypeTableBuilderVisitor t = new TypeTableBuilderVisitor();
+		t.visit(ICRoot);
+		System.out.println(TypeTable.getString(pathTOic));
 	}
 }

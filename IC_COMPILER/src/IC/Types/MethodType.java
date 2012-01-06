@@ -14,21 +14,29 @@ public class MethodType extends Type {
 		this.returnVal = returnVal;
 	}
 	
-	@Override
-	public String toString() {
+	public static String getIdentifier(List<Type> arguments, Type returnVal) {
 		StringBuilder sb = new StringBuilder("{");
-		
-		for (Type argument: this.arguments) {
+
+		for (Type argument: arguments) {
 			sb.append(argument.toString());
 			sb.append(", ");
 		}
-		
-		sb.deleteCharAt(sb.length() - 2);
+
+		if (arguments.size() > 0) {
+			sb.deleteCharAt(sb.length() - 2);
+		} else {
+			sb.append(" ");
+		}
 		sb.append("-> ");
 		sb.append(returnVal.toString());
 		sb.append("}");
-		
+
 		return sb.toString();
+	}
+	
+	@Override
+	public String toString() {
+		return MethodType.getIdentifier(this.getArguments(), this.getReturnVal());
 	}
 
 	@Override
