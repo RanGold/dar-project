@@ -57,7 +57,6 @@ public class TypeTableBuilderVisitor implements Visitor {
 
 	@Override
 	public Object visit(ICClass icClass) {
-		 TypeTable.classType(icClass);
 		 for (Field field : icClass.getFields()){
 			 field.accept(this);
 		 }
@@ -66,12 +65,16 @@ public class TypeTableBuilderVisitor implements Visitor {
 			 method.accept(this);
 		 }
 		 
-		 return null;
+		 ClassType type = TypeTable.classType(icClass);
+		 icClass.setEnclosingType(type);
+		 return type;
 	}
 
 	@Override
 	public Object visit(Field field) {
-		return field.getType().accept(this);
+		Type type = (Type)field.getType().accept(this);
+		field.setEnclosingType(type);
+		return type;
 	}
 
 	private MethodType methodVisit(Method method) {
@@ -86,7 +89,8 @@ public class TypeTableBuilderVisitor implements Visitor {
 		
 		Type retVal = (Type)method.getType().accept(this);
 		
-		return TypeTable.methodType(formalTypes, retVal);
+		MethodType type = TypeTable.methodType(formalTypes, retVal);
+		return type;
 	}
 	
 	@Override
@@ -155,6 +159,7 @@ public class TypeTableBuilderVisitor implements Visitor {
 		if (ifStatement.hasElse()) {
 			ifStatement.getElseOperation().accept(this);
 		}
+		
 		return null;
 	}
 
@@ -184,12 +189,13 @@ public class TypeTableBuilderVisitor implements Visitor {
 
 	@Override
 	public Object visit(LocalVariable localVariable) {
-		localVariable.getType().accept(this);
 		if (localVariable.hasInitValue()) {
 			localVariable.getInitValue().accept(this);
 		}
 		
-		return null;
+		Type type = (Type)localVariable.getType().accept(this);
+		localVariable.setEnclosingType(type);
+		return type;
 	}
 
 	@Override
