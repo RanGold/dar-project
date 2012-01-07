@@ -1,5 +1,8 @@
 package IC.SymbolTables;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import IC.AST.*;
 
 public class SymbolTableBuilder implements Visitor {
@@ -25,21 +28,34 @@ public class SymbolTableBuilder implements Visitor {
 	}
 	
 	public Object visit(Program program) {
+		Map<String,SymbolTable> classes = new HashMap<String,SymbolTable>();
+		
 		SymbolTable st = new SymbolTable(path,SymbolTableTypes.Global);
 		String className;
+		program.addenclosingScope(st);
 		
 		for (ICClass icClass : program.getClasses()) {
 			className = icClass.getName();
-			st.addEntry(className,
-					new Symbol(className, icClass.getEnclosingType(),
-							Kind.CLASS));
-		}
-		
-		program.addenclosingScope(st);
-		for (ICClass icClass : program.getClasses()) {
+			st.addEntry(className, new Symbol(className, icClass.getEnclosingType(), Kind.CLASS));
+			
+			//add symbol table for every class and make program its father
 			SymbolTable stClass = new SymbolTable(icClass.getName(), st,SymbolTableTypes.Class);
 			icClass.addenclosingScope(stClass);
 			st.addChild(stClass);
+			classes.put(icClass.getName(), stClass);
+		}
+		
+		
+		for (ICClass icClass : program.getClasses()) {
+			
+			//if class extends other class then we reset the parent-child relationships
+			if (icClass.getSuperClassName()!=null){
+				SymbolTable temp = classes.get(icClass.getSuperClassName());
+				st.removeChild(icClass.getenclosingScope());
+				temp.addChild(icClass.getenclosingScope());
+				icClass.getenclosingScope().setParentSymbolTable(temp);
+			}
+			
 			icClass.accept(this);
 		}
 		
