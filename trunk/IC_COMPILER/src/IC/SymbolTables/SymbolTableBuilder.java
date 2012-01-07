@@ -150,39 +150,31 @@ public class SymbolTableBuilder implements Visitor {
 
 	@Override
 	public Object visit(If ifStatement) {//TODO what about if (x==5) return false - meaning what about if with no {} should we open a block (new symbol table?)
-		SymbolTable stif = new SymbolTable(ifStatement.toString(),ifStatement.getenclosingScope(),SymbolTableTypes.StatementBlock);
-		ifStatement.getenclosingScope().addChild(stif);
-		
-		ifStatement.getCondition().addenclosingScope(stif);//TODO needed?
+
+		ifStatement.getCondition().addenclosingScope(ifStatement.getenclosingScope());//TODO needed?
 		ifStatement.getCondition().accept(this);
 		
-		ifStatement.getOperation().addenclosingScope(stif);
+		ifStatement.getOperation().addenclosingScope(ifStatement.getenclosingScope());
 		ifStatement.getOperation().accept(this);
 		
 		if (ifStatement.hasElse()){
-			SymbolTable stelse = new SymbolTable(ifStatement.getElseOperation().toString(),ifStatement.getenclosingScope(),SymbolTableTypes.StatementBlock);
-			ifStatement.getenclosingScope().addChild(stelse);
-			ifStatement.getElseOperation().addenclosingScope(stelse);
+			ifStatement.getElseOperation().addenclosingScope(ifStatement.getenclosingScope());
 			ifStatement.getElseOperation().accept(this);
 		}
 		
-		ifStatement.addenclosingScope(stif);
-		return stif;
+		return ifStatement.getenclosingScope();
 	}
 
 	@Override
 	public Object visit(While whileStatement) {
-		SymbolTable st = new SymbolTable(whileStatement.toString(),whileStatement.getenclosingScope(),SymbolTableTypes.StatementBlock);
-		whileStatement.getenclosingScope().addChild(st);
-		whileStatement.addenclosingScope(st);
 		
-		whileStatement.getCondition().addenclosingScope(st);//TODO needed?
+		whileStatement.getCondition().addenclosingScope(whileStatement.getenclosingScope());//TODO needed?
 		whileStatement.getCondition().accept(this);
 		
-		whileStatement.getOperation().addenclosingScope(st);
+		whileStatement.getOperation().addenclosingScope(whileStatement.getenclosingScope());
 		whileStatement.getOperation().accept(this);
 		
-		return st;
+		return whileStatement.getenclosingScope();
 	}
 
 	@Override
