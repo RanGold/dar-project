@@ -40,18 +40,41 @@ public class SymbolTable {
 		return parentSymbolTable;
 	}
 	
+	public void setParentSymbolTable(SymbolTable st) {
+		parentSymbolTable = st;
+	}
+	
 	public void addChild(SymbolTable child){
 		if (!children.contains(child)) 
 			children.add(child);
+	}
+	
+	public void removeChild(SymbolTable child){
+		children.remove(child);
 	}
 	
 	public List<SymbolTable> getChildren(){
 		return children;
 	}
 
+	private String stmtBlockLocation(SymbolTable st){
+		String location="";
+		SymbolTable parent=st.parentSymbolTable;
+		while (!parent.type.equals(SymbolTableTypes.Method)){
+			location += "statement block in ";
+			parent=parent.parentSymbolTable;
+		}
+		location += parent.id;
+		return location;
+	}
+	
 	@Override
 	public String toString() {
-		String output = type + ": " + id + "\n";
+		String output="";
+		if (type.equals(SymbolTableTypes.StatementBlock))
+			output = type + " ( located in " + stmtBlockLocation(this) + " )\n";
+		else
+			output = type + ": " + id + "\n";
 		for (Entry<String,Symbol> entry : entries.entrySet()){
 			output += "\t" + entry.getValue() + "\n";
 		}
@@ -61,7 +84,10 @@ public class SymbolTable {
 			for (SymbolTable child : children){
 				if (pos++!=0)
 					output += ", ";
-				output += child.id;
+				if (child.type.equals(SymbolTableTypes.StatementBlock))
+					output += "statement block in " + stmtBlockLocation(child);
+				else
+					output += child.id;
 			}
 			output += "\n";
 		}
