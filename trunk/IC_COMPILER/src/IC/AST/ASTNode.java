@@ -45,7 +45,7 @@ public abstract class ASTNode {
 		return enclosingScope;
 	}
 
-	public void addenclosingScope(SymbolTable enclosingScope) {
+	public void setenclosingScope(SymbolTable enclosingScope) {
 		this.enclosingScope =  enclosingScope;
 	}
 	

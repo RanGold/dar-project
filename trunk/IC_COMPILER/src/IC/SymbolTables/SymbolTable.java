@@ -1,6 +1,6 @@
 package IC.SymbolTables;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +17,7 @@ public class SymbolTable {
 	public SymbolTable(String id, SymbolTableTypes type) {
 		this.id = id;
 		this.type = type;
-		entries = new HashMap<String, Symbol>();
+		entries = new LinkedHashMap<String, Symbol>();
 		children = new LinkedList<SymbolTable>();
 		parentSymbolTable = null;
 	}
@@ -40,18 +40,18 @@ public class SymbolTable {
 		return parentSymbolTable;
 	}
 	
-	public void setParentSymbolTable(SymbolTable st) {
-		parentSymbolTable = st;
-	}
+//	public void setParentSymbolTable(SymbolTable st) {
+//		parentSymbolTable = st;
+//	}
 	
 	public void addChild(SymbolTable child){
 		if (!children.contains(child)) 
 			children.add(child);
 	}
 	
-	public void removeChild(SymbolTable child){
-		children.remove(child);
-	}
+//	public void removeChild(SymbolTable child){
+//		children.remove(child);
+//	}
 	
 	public List<SymbolTable> getChildren(){
 		return children;

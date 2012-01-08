@@ -97,7 +97,11 @@ public class Compiler {
 		}
 		
 		TypeTableBuilderVisitor t = new TypeTableBuilderVisitor();
-		t.visit(ICRoot);
+		Exception b = (Exception) t.visit(ICRoot);
+		if (b!=null){
+			System.out.println(b.getMessage());
+			System.exit(-1);
+		}
 		System.out.println(TypeTable.getString(pathTOic));
 		
 		Visitor s=new SymbolTableBuilder(pathTOic);
