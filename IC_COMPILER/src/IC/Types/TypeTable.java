@@ -1,6 +1,6 @@
 package IC.Types;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -11,16 +11,16 @@ import IC.SemanticChecks.SemanticError;
 
 public class TypeTable {
 	// Stores the table types' strings
-	private static Map<String, PrimitiveType> uniquePrimitveTypes = new HashMap<String, PrimitiveType>();
+	private static Map<String, PrimitiveType> uniquePrimitveTypes = new LinkedHashMap<String, PrimitiveType>();
 
 	// Maps element types to array types
-	private static Map<Type, ArrayType> uniqueArrayTypes = new HashMap<Type, ArrayType>();
+	private static Map<Type, ArrayType> uniqueArrayTypes = new LinkedHashMap<Type, ArrayType>();
 
 	// Maps identifiers to class types
-	private static Map<String, ClassType> uniqueClassTypes = new HashMap<String, ClassType>();
+	private static Map<String, ClassType> uniqueClassTypes = new LinkedHashMap<String, ClassType>();
 
 	// Maps identifiers to method types
-	private static Map<String, MethodType> uniqueMethodTypes = new HashMap<String, MethodType>();
+	private static Map<String, MethodType> uniqueMethodTypes = new LinkedHashMap<String, MethodType>();
 
 	// Flag indicating the table's validity
 	private static UserType invalidUserType = null;

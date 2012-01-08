@@ -28,34 +28,32 @@ public class SymbolTableBuilder implements Visitor {
 	}
 	
 	public Object visit(Program program) {
-		Map<String,SymbolTable> classes = new HashMap<String,SymbolTable>();
+		Map<String,SymbolTable> classes_without_extends = new HashMap<String,SymbolTable>();
 		
 		SymbolTable st = new SymbolTable(path,SymbolTableTypes.Global);
 		String className;
-		program.addenclosingScope(st);
+		program.setenclosingScope(st);
 		
 		for (ICClass icClass : program.getClasses()) {
 			className = icClass.getName();
+			
+			//add class to symbol table of classes
 			st.addEntry(className, new Symbol(className, icClass.getEnclosingType(), Kind.CLASS));
 			
-			//add symbol table for every class and make program its father
-			SymbolTable stClass = new SymbolTable(icClass.getName(), st,SymbolTableTypes.Class);
-			icClass.addenclosingScope(stClass);
-			st.addChild(stClass);
-			classes.put(icClass.getName(), stClass);
-		}
-		
-		
-		for (ICClass icClass : program.getClasses()) {
-			
-			//if class extends other class then we reset the parent-child relationships
-			if (icClass.getSuperClassName()!=null){
-				SymbolTable temp = classes.get(icClass.getSuperClassName());
-				st.removeChild(icClass.getenclosingScope());
-				temp.addChild(icClass.getenclosingScope());
-				icClass.getenclosingScope().setParentSymbolTable(temp);
+			SymbolTable stClass;
+			//if class doesn't extend any other class
+			//then make it a child of st and put it in classes_without_extends
+			if (icClass.getSuperClassName()==null){
+				stClass = new SymbolTable(icClass.getName(), st,SymbolTableTypes.Class);
+				classes_without_extends.put(icClass.getName(), stClass);
+				st.addChild(stClass);
 			}
-			
+			else{//make it a child of the class it extends
+				SymbolTable temp = classes_without_extends.get(icClass.getSuperClassName());
+				stClass = new SymbolTable(icClass.getName(), temp,SymbolTableTypes.Class);
+				temp.addChild(stClass);
+			}
+			icClass.setenclosingScope(stClass);
 			icClass.accept(this);
 		}
 		
@@ -77,7 +75,7 @@ public class SymbolTableBuilder implements Visitor {
 			name = method.getName();
 			SymbolTable stMethod = new SymbolTable(name, icClass.getenclosingScope(),SymbolTableTypes.Method);
 			icClass.getenclosingScope().addChild(stMethod);
-			method.addenclosingScope(stMethod);
+			method.setenclosingScope(stMethod);
 			icClass.getenclosingScope().addEntry(name,
 					new Symbol(name, method.getEnclosingType(), method_kind(method.getClass().toString())));
 		}
@@ -104,7 +102,7 @@ public class SymbolTableBuilder implements Visitor {
 					new Symbol(name, formal.getEnclosingType(), Kind.FORMAL));
 		}
 		for (Statement statement : method.getStatements()){
-			statement.addenclosingScope(method.getenclosingScope());
+			statement.setenclosingScope(method.getenclosingScope());
 			statement.accept(this);
 		}
 	}
@@ -167,14 +165,14 @@ public class SymbolTableBuilder implements Visitor {
 	@Override
 	public Object visit(If ifStatement) {//TODO what about if (x==5) return false - meaning what about if with no {} should we open a block (new symbol table?)
 
-		ifStatement.getCondition().addenclosingScope(ifStatement.getenclosingScope());//TODO needed?
+		ifStatement.getCondition().setenclosingScope(ifStatement.getenclosingScope());//TODO needed?
 		ifStatement.getCondition().accept(this);
 		
-		ifStatement.getOperation().addenclosingScope(ifStatement.getenclosingScope());
+		ifStatement.getOperation().setenclosingScope(ifStatement.getenclosingScope());
 		ifStatement.getOperation().accept(this);
 		
 		if (ifStatement.hasElse()){
-			ifStatement.getElseOperation().addenclosingScope(ifStatement.getenclosingScope());
+			ifStatement.getElseOperation().setenclosingScope(ifStatement.getenclosingScope());
 			ifStatement.getElseOperation().accept(this);
 		}
 		
@@ -184,10 +182,10 @@ public class SymbolTableBuilder implements Visitor {
 	@Override
 	public Object visit(While whileStatement) {
 		
-		whileStatement.getCondition().addenclosingScope(whileStatement.getenclosingScope());//TODO needed?
+		whileStatement.getCondition().setenclosingScope(whileStatement.getenclosingScope());//TODO needed?
 		whileStatement.getCondition().accept(this);
 		
-		whileStatement.getOperation().addenclosingScope(whileStatement.getenclosingScope());
+		whileStatement.getOperation().setenclosingScope(whileStatement.getenclosingScope());
 		whileStatement.getOperation().accept(this);
 		
 		return whileStatement.getenclosingScope();
@@ -209,9 +207,9 @@ public class SymbolTableBuilder implements Visitor {
 	public Object visit(StatementsBlock statementsBlock) {
 		SymbolTable st = new SymbolTable(statementsBlock.toString(),statementsBlock.getenclosingScope(),SymbolTableTypes.StatementBlock);
 		statementsBlock.getenclosingScope().addChild(st);
-		statementsBlock.addenclosingScope(st);
+		statementsBlock.setenclosingScope(st);
 		for(Statement statement : statementsBlock.getStatements()){
-			statement.addenclosingScope(st);
+			statement.setenclosingScope(st);
 			statement.accept(this);
 		}
 		
