@@ -122,7 +122,8 @@ public class TypeTableBuilderVisitor implements Visitor {
 		for (int i = 0; i < type.getDimension(); i++) {
 			curType = TypeTable.arrayType(curType);
 		}
-
+		
+		type.setEnclosingType(curType);
 		return curType;
 	}
 
@@ -132,7 +133,8 @@ public class TypeTableBuilderVisitor implements Visitor {
 		for (int i = 0; i < type.getDimension(); i++) {
 			curType = TypeTable.arrayType(curType);
 		}
-
+		
+		type.setEnclosingType(curType);
 		return curType;
 	}
 
