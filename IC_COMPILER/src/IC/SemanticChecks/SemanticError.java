@@ -3,15 +3,21 @@ package IC.SemanticChecks;
 import java_cup.runtime.Symbol;
 
 @SuppressWarnings("serial")
-public class SemanticError extends Exception {
+public class SemanticError extends RuntimeException {
 	private int line;
 	private Symbol tok;
-	private boolean isMessage;
+	private boolean hasLine;
 
 	public SemanticError(String message, int line) {
 		super(message);
-		this.isMessage = true;
 		this.line = line;
+		this.hasLine = true;
+	}
+	
+	public SemanticError(String message) {
+		super(message);
+		this.hasLine = false;
+		this.line = 0;
 	}
 
 	public String getMessage() {
@@ -19,10 +25,12 @@ public class SemanticError extends Exception {
 	}
 
 	public String toString() {
-		if (this.isMessage) {
+		if (this.hasLine)
 			return "Semantic error at line " + line + ": " + super.getMessage();
-		} else {
-			return "Semantic error at line " + tok.toString();
-		}
+		else
+			return "Semantic error: " + super.getMessage();
+//		else {
+//			return "Semantic error at line " + tok.toString();//TODO why is this needed?
+//		}
 	}
 }

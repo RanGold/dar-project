@@ -102,12 +102,14 @@ public class Compiler {
 			System.out.println(b.getMessage());
 			System.exit(-1);
 		}
-		System.out.println(TypeTable.getString(pathTOic));
+		
 		
 		Visitor s=new SymbolTableBuilder(pathTOic);
 		s.visit(ICRoot);
 		
 		SymbolTablePrint pr = new SymbolTablePrint(ICRoot);
 		pr.printSymbolTable();
+		
+		System.out.println(TypeTable.getString(pathTOic));
 	}
 }
