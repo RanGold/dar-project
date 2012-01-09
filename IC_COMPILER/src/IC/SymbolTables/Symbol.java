@@ -11,6 +11,10 @@ public class Symbol {
 		this.kind=kind;
 	}
 	
+	public IC.Types.Type getType(){
+		return type;
+	}
+	
 	@Override
 	public String toString(){
 		if (kind.equals(Kind.CLASS))
