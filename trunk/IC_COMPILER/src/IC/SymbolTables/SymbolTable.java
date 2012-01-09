@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import IC.SemanticChecks.SemanticError;
+
 public class SymbolTable {
 
 	private Map<String, Symbol> entries;
@@ -28,33 +30,39 @@ public class SymbolTable {
 		this.parentSymbolTable = parentSymbolTable;
 	}
 
-	public void addEntry(String key, Symbol data) {
+	public void addEntry(String key, Symbol data,int line) {
 		if (!entries.containsKey(key)) {
 			entries.put(key, data);
 		} else {
-			// TODO WHAT IF EXISTS????
+			throw new SemanticError("Illegal reuse of name "+key,line);
 		}
+	}
+	
+	public boolean existEntry(String key){
+		if (entries.containsKey(key))
+			return true;
+		return false;
+	}
+	
+	public Symbol getEntry(String key){
+		return entries.get(key);
 	}
 
 	public SymbolTable getParentSymbolTable() {
 		return parentSymbolTable;
 	}
 	
-//	public void setParentSymbolTable(SymbolTable st) {
-//		parentSymbolTable = st;
-//	}
-	
 	public void addChild(SymbolTable child){
 		if (!children.contains(child)) 
 			children.add(child);
 	}
 	
-//	public void removeChild(SymbolTable child){
-//		children.remove(child);
-//	}
-	
 	public List<SymbolTable> getChildren(){
 		return children;
+	}
+	
+	public SymbolTableTypes getType(){
+		return type;
 	}
 
 	private String stmtBlockLocation(SymbolTable st){
