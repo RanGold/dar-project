@@ -7,7 +7,7 @@ public enum Kind {
 	STATIC_METHOD("Static method"),
 	VIRTUAL_METHOD("Virtual method"),
 	//LIBRARY_METHOD("Library method"),
-	LIBRARY_METHOD("Static method"),
+	//LIBRARY_METHOD("Static method"),
 	METHOD("Method"),
 	VAR("Local variable");
 	

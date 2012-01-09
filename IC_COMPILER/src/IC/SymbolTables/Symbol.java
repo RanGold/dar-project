@@ -15,11 +15,15 @@ public class Symbol {
 		return type;
 	}
 	
+	public Kind getKind(){
+		return kind;
+	}
+	
 	@Override
 	public String toString(){
 		if (kind.equals(Kind.CLASS))
 			return kind+": "+type;
-		if (kind.equals(Kind.METHOD) || kind.equals(Kind.STATIC_METHOD) || kind.equals(Kind.VIRTUAL_METHOD) || kind.equals(Kind.LIBRARY_METHOD))
+		if (kind.equals(Kind.METHOD) || kind.equals(Kind.STATIC_METHOD) || kind.equals(Kind.VIRTUAL_METHOD))
 			return kind+": "+id+" "+type;
 		return kind+": "+type+" "+id;
 	}
