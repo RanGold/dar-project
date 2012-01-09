@@ -3,11 +3,16 @@ package IC.SymbolTables;
 import java.util.HashMap;
 import java.util.Map;
 
+import IC.DataTypes;
 import IC.AST.*;
+import IC.SemanticChecks.SemanticError;
+import IC.Types.TypeClass;
+import IC.Types.TypeTable;
 
 public class SymbolTableBuilder implements Visitor {
 
 	private String path;
+	private boolean seen_main;
 	
 	private Kind method_kind(String method_name){
 		String virtual_method = "class IC.AST.VirtualMethod";
@@ -25,6 +30,7 @@ public class SymbolTableBuilder implements Visitor {
 	
 	public SymbolTableBuilder(String path){
 		this.path = path;
+		this.seen_main = false;
 	}
 	
 	public Object visit(Program program) {
@@ -56,12 +62,28 @@ public class SymbolTableBuilder implements Visitor {
 			icClass.setenclosingScope(stClass);
 			icClass.accept(this);
 		}
-		
+		if (!seen_main)
+			throw new SemanticError("No main message has been defined");
 		return st;
 	}
 
+	private void check_main(Method method){
+		if (seen_main)
+			throw new SemanticError("More than one main method was defined",method.getLine());
+		if(!method_kind(method.getClass().toString()).equals(Kind.STATIC_METHOD))
+			throw new SemanticError("The main method must be a static method",method.getLine());
+		if (method.getFormals().size()!=1)
+			throw new SemanticError("Wrong number of arguments for main method",method.getLine());
+		if (!method.getFormals().get(0).getEnclosingType().getTypeClass().equals(TypeClass.Array) || method.getFormals().get(0).getType().getDimension()!=1)
+			throw new SemanticError("The type of the input parameter of the main method must be \"string[]\"",method.getLine());
+		if (!method.getFormals().get(0).getName().equals("args"))
+			throw new SemanticError("Input parameter in main method must be named \"args\"",method.getLine());
+		if (!method.getType().getEnclosingType().subtypeof(TypeTable.voidType))
+			throw new SemanticError("main method must return void",method.getLine());
+		seen_main = true;
+	}
+	
 	// TODO - check what to do with static
-
 	public Object visit(ICClass icClass) {
 		
 		String name;
@@ -73,6 +95,11 @@ public class SymbolTableBuilder implements Visitor {
 		}
 		for (Method method : icClass.getMethods()) {
 			name = method.getName();
+			
+			//check if this method is a main method
+			if (name.equals("main"))
+				check_main(method);
+			
 			SymbolTable stMethod = new SymbolTable(name, icClass.getenclosingScope(),SymbolTableTypes.Method);
 			icClass.getenclosingScope().addChild(stMethod);
 			method.setenclosingScope(stMethod);
