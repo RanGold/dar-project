@@ -9,7 +9,8 @@ public enum Kind {
 	//LIBRARY_METHOD("Library method"),
 	//LIBRARY_METHOD("Static method"),
 	METHOD("Method"),
-	VAR("Local variable");
+	VAR("Local variable"),
+	RET_VAR("Return variable");
 	
 	private String name;
 	

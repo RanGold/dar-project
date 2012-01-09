@@ -3,10 +3,9 @@ package IC.SymbolTables;
 import java.util.HashMap;
 import java.util.Map;
 
-import IC.DataTypes;
 import IC.AST.*;
 import IC.SemanticChecks.SemanticError;
-import IC.Types.TypeClass;
+import IC.Types.MethodType;
 import IC.Types.TypeTable;
 
 public class SymbolTableBuilder implements Visitor {
@@ -14,7 +13,7 @@ public class SymbolTableBuilder implements Visitor {
 	private String path;
 	private boolean seen_main;
 	
-	private Kind method_kind(String method_name){
+	private Kind get_method_kind(String method_name){
 		String virtual_method = "class IC.AST.VirtualMethod";
 		String static_method = "class IC.AST.StaticMethod";
 		String library_method = "class IC.AST.LibraryMethod";
@@ -23,7 +22,8 @@ public class SymbolTableBuilder implements Visitor {
 		else if (method_name.equals(static_method))
 			return Kind.STATIC_METHOD;
 		else if (method_name.equals(library_method))
-			return Kind.LIBRARY_METHOD;
+			//return Kind.LIBRARY_METHOD;
+			return Kind.STATIC_METHOD;
 		else
 			return Kind.METHOD;
 	}
@@ -44,20 +44,21 @@ public class SymbolTableBuilder implements Visitor {
 			className = icClass.getName();
 			
 			//add class to symbol table of classes
-			st.addEntry(className, new Symbol(className, icClass.getEnclosingType(), Kind.CLASS));
+			st.addEntry(className, new Symbol(className, icClass.getEnclosingType(), Kind.CLASS),icClass.getLine());
 			
 			SymbolTable stClass;
 			//if class doesn't extend any other class
 			//then make it a child of st and put it in classes_without_extends
 			if (icClass.getSuperClassName()==null){
-				stClass = new SymbolTable(icClass.getName(), st,SymbolTableTypes.Class);
-				classes_without_extends.put(icClass.getName(), stClass);
+				stClass = new SymbolTable(className, st,SymbolTableTypes.Class);
+				classes_without_extends.put(className, stClass);
 				st.addChild(stClass);
 			}
 			else{//make it a child of the class it extends
 				SymbolTable temp = classes_without_extends.get(icClass.getSuperClassName());
-				stClass = new SymbolTable(icClass.getName(), temp,SymbolTableTypes.Class);
+				stClass = new SymbolTable(className, temp,SymbolTableTypes.Class);
 				temp.addChild(stClass);
+				classes_without_extends.put(className, stClass);
 			}
 			icClass.setenclosingScope(stClass);
 			icClass.accept(this);
@@ -68,30 +69,85 @@ public class SymbolTableBuilder implements Visitor {
 	}
 
 	private void check_main(Method method){
+		//check that no main message has been already defined
 		if (seen_main)
 			throw new SemanticError("More than one main method was defined",method.getLine());
-		if(!method_kind(method.getClass().toString()).equals(Kind.STATIC_METHOD))
+		//check that the method is static
+		if(!get_method_kind(method.getClass().toString()).equals(Kind.STATIC_METHOD))
 			throw new SemanticError("The main method must be a static method",method.getLine());
+		//check correct number of parameters
 		if (method.getFormals().size()!=1)
 			throw new SemanticError("Wrong number of arguments for main method",method.getLine());
-		if (!method.getFormals().get(0).getEnclosingType().getTypeClass().equals(TypeClass.Array) || method.getFormals().get(0).getType().getDimension()!=1)
+		//check parameter's type
+		if (!method.getFormals().get(0).getType().getEnclosingType().subtypeof(TypeTable.arrayType(TypeTable.stringType)) || method.getFormals().get(0).getType().getDimension()!=1)
 			throw new SemanticError("The type of the input parameter of the main method must be \"string[]\"",method.getLine());
+		//check name of input parameter
 		if (!method.getFormals().get(0).getName().equals("args"))
 			throw new SemanticError("Input parameter in main method must be named \"args\"",method.getLine());
+		//check return parameter
 		if (!method.getType().getEnclosingType().subtypeof(TypeTable.voidType))
 			throw new SemanticError("main method must return void",method.getLine());
 		seen_main = true;
 	}
 	
-	// TODO - check what to do with static
+	private void super_field_uses(ICClass icClass, String field_name, int line){
+		SymbolTable st=icClass.getenclosingScope().getParentSymbolTable();
+		while (!st.getType().equals(SymbolTableTypes.Global)){
+			if (st.existEntry(field_name))
+				throw new SemanticError("Illegal reuse of the name \""+field_name+"\" (was previously defined in one of the super classes)",line);
+			st = st.getParentSymbolTable();
+		}
+	}
+	
+	private void super_method_uses(ICClass icClass, Method method){
+		String method_name = method.getName();
+		int line = method.getLine();
+		Kind method_kind = get_method_kind(method.getClass().toString());
+		
+		SymbolTable st=icClass.getenclosingScope().getParentSymbolTable();
+		while (!st.getType().equals(SymbolTableTypes.Global)){
+			if (st.existEntry(method_name)){
+				Symbol methodTOoverride = st.getEntry(method_name);
+				if (!method_kind.equals(methodTOoverride.getKind())){
+					if (!methodTOoverride.getKind().equals(Kind.VIRTUAL_METHOD) && !methodTOoverride.getKind().equals(Kind.STATIC_METHOD))
+						throw new SemanticError(method_kind+" cannot have the same name of a "+methodTOoverride.getKind().toString().toLowerCase(),line);
+					else
+						throw new SemanticError(method_kind+" cannot override/overload "+methodTOoverride.getKind().toString().toLowerCase(),line);
+				}
+				else{//validate that a correct override was used
+					MethodType methodTOoverride_type = (MethodType) methodTOoverride.getType();
+					MethodType method_type = (MethodType) method.getEnclosingType();
+					//check that the number of arguments are equal
+					if (method_type.getArguments().size()!=methodTOoverride_type.getArguments().size())
+						throw new SemanticError("Overloading of methods is not supported",line);
+					//check that the arguments types are correctly overridden
+					for (int i=0;i<methodTOoverride_type.getArguments().size();i++){
+						IC.Types.Type type1 = method_type.getArguments().get(i);
+						IC.Types.Type type2 = methodTOoverride_type.getArguments().get(i);
+						if (type1!=type2 && !type2.subtypeof(type1))
+							throw new SemanticError("Overloading of methods is not supported",line);
+					}
+					//check that the return type is correctly overridden
+					IC.Types.Type type1 = method_type.getReturnVal();
+					IC.Types.Type type2 = methodTOoverride_type.getReturnVal();
+					if (type1!=type2 && !type1.subtypeof(type2))
+						throw new SemanticError("Overloading of methods is not supported",line);
+				}
+			}
+			st = st.getParentSymbolTable();
+		}
+	}
+	
 	public Object visit(ICClass icClass) {
 		
 		String name;
 		/* add fields and methods to table */
 		for (Field field : icClass.getFields()) {
 			name = field.getName();
-			icClass.getenclosingScope().addEntry(name,
-					new Symbol(name, field.getEnclosingType(), Kind.FIELD));
+			icClass.getenclosingScope().addEntry(name,new Symbol(name, field.getEnclosingType(), Kind.FIELD),field.getLine());
+			
+			//check that field name wasn't used in super classes
+			super_field_uses(icClass,name,field.getLine());
 		}
 		for (Method method : icClass.getMethods()) {
 			name = method.getName();
@@ -100,17 +156,20 @@ public class SymbolTableBuilder implements Visitor {
 			if (name.equals("main"))
 				check_main(method);
 			
+			//check that if this method's name exists in one of the super classes
+			//then it overrides/hides it correctly
+			super_method_uses(icClass,method);
+			
 			SymbolTable stMethod = new SymbolTable(name, icClass.getenclosingScope(),SymbolTableTypes.Method);
 			icClass.getenclosingScope().addChild(stMethod);
 			method.setenclosingScope(stMethod);
-			icClass.getenclosingScope().addEntry(name,
-					new Symbol(name, method.getEnclosingType(), method_kind(method.getClass().toString())));
+			icClass.getenclosingScope().addEntry(name,new Symbol(name, method.getEnclosingType(), get_method_kind(method.getClass().toString())),method.getLine());
 		}
 
 		/* call visitor on fields and methods */
-		for (Field field : icClass.getFields()){
-			field.accept(this);
-		}
+//		for (Field field : icClass.getFields()) {
+//			field.accept(this);
+//		}
 		for (Method method : icClass.getMethods()) {
 			method.accept(this);
 		}
@@ -125,8 +184,7 @@ public class SymbolTableBuilder implements Visitor {
 		String name;
 		for (Formal formal : method.getFormals()){
 			name = formal.getName();
-			method.getenclosingScope().addEntry(name,
-					new Symbol(name, formal.getEnclosingType(), Kind.FORMAL));
+			method.getenclosingScope().addEntry(name,new Symbol(name, formal.getEnclosingType(), Kind.FORMAL),formal.getLine());
 		}
 		for (Statement statement : method.getStatements()){
 			statement.setenclosingScope(method.getenclosingScope());
@@ -183,17 +241,17 @@ public class SymbolTableBuilder implements Visitor {
 		return null;
 	}
 
-	@Override
+	@Override//TODO add $ret here
 	public Object visit(Return returnStatement) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Object visit(If ifStatement) {//TODO what about if (x==5) return false - meaning what about if with no {} should we open a block (new symbol table?)
+	public Object visit(If ifStatement) {
 
-		ifStatement.getCondition().setenclosingScope(ifStatement.getenclosingScope());//TODO needed?
-		ifStatement.getCondition().accept(this);
+//		ifStatement.getCondition().setenclosingScope(ifStatement.getenclosingScope());//TODO needed?
+//		ifStatement.getCondition().accept(this);
 		
 		ifStatement.getOperation().setenclosingScope(ifStatement.getenclosingScope());
 		ifStatement.getOperation().accept(this);
@@ -209,8 +267,8 @@ public class SymbolTableBuilder implements Visitor {
 	@Override
 	public Object visit(While whileStatement) {
 		
-		whileStatement.getCondition().setenclosingScope(whileStatement.getenclosingScope());//TODO needed?
-		whileStatement.getCondition().accept(this);
+//		whileStatement.getCondition().setenclosingScope(whileStatement.getenclosingScope());//TODO needed?
+//		whileStatement.getCondition().accept(this);
 		
 		whileStatement.getOperation().setenclosingScope(whileStatement.getenclosingScope());
 		whileStatement.getOperation().accept(this);
@@ -246,7 +304,7 @@ public class SymbolTableBuilder implements Visitor {
 	@Override
 	public Object visit(LocalVariable localVariable) {
 		String name = localVariable.getName();
-		localVariable.getenclosingScope().addEntry(name, new Symbol(name,localVariable.getEnclosingType(),Kind.VAR));
+		localVariable.getenclosingScope().addEntry(name, new Symbol(name,localVariable.getEnclosingType(),Kind.VAR),localVariable.getLine());
 		return null;
 	}
 
