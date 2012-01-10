@@ -13,28 +13,13 @@ public class SymbolTableBuilder implements Visitor {
 	private String path;
 	private boolean seen_main;
 	
-	private Kind get_method_kind(String method_name){
-		String virtual_method = "class IC.AST.VirtualMethod";
-		String static_method = "class IC.AST.StaticMethod";
-		String library_method = "class IC.AST.LibraryMethod";
-		if (method_name.equals(virtual_method))
-			return Kind.VIRTUAL_METHOD;
-		else if (method_name.equals(static_method))
-			return Kind.STATIC_METHOD;
-		else if (method_name.equals(library_method))
-			//return Kind.LIBRARY_METHOD;
-			return Kind.STATIC_METHOD;
-		else
-			return Kind.METHOD;
-	}
-	
 	public SymbolTableBuilder(String path){
 		this.path = path;
 		this.seen_main = false;
 	}
 	
 	public Object visit(Program program) {
-		Map<String,SymbolTable> classes_without_extends = new HashMap<String,SymbolTable>();
+		Map<String,SymbolTable> classes_tobe_extended = new HashMap<String,SymbolTable>();
 		
 		SymbolTable st = new SymbolTable(path,SymbolTableTypes.Global);
 		String className;
@@ -48,17 +33,20 @@ public class SymbolTableBuilder implements Visitor {
 			
 			SymbolTable stClass;
 			//if class doesn't extend any other class
-			//then make it a child of st and put it in classes_without_extends
+			//then make it a child of st and put it in classes_tobe_extended
 			if (icClass.getSuperClassName()==null){
 				stClass = new SymbolTable(className, st,SymbolTableTypes.Class);
-				classes_without_extends.put(className, stClass);
+				classes_tobe_extended.put(className, stClass);
 				st.addChild(stClass);
 			}
 			else{//make it a child of the class it extends
-				SymbolTable temp = classes_without_extends.get(icClass.getSuperClassName());
+				SymbolTable temp = classes_tobe_extended.get(icClass.getSuperClassName());
+				if (temp==null){//class to be extended was yet to be defined
+					throw new SemanticError("Trying to extend a class that has yet to be defined",icClass.getLine());
+				}
 				stClass = new SymbolTable(className, temp,SymbolTableTypes.Class);
 				temp.addChild(stClass);
-				classes_without_extends.put(className, stClass);
+				classes_tobe_extended.put(className, stClass);
 			}
 			icClass.setenclosingScope(stClass);
 			icClass.accept(this);
@@ -66,6 +54,21 @@ public class SymbolTableBuilder implements Visitor {
 		if (!seen_main)
 			throw new SemanticError("No main message has been defined");
 		return st;
+	}
+	
+	private Kind get_method_kind(String method_name){
+		String virtual_method = "class IC.AST.VirtualMethod";
+		String static_method = "class IC.AST.StaticMethod";
+		String library_method = "class IC.AST.LibraryMethod";
+		if (method_name.equals(virtual_method))
+			return Kind.VIRTUAL_METHOD;
+		else if (method_name.equals(static_method))
+			return Kind.STATIC_METHOD;
+		else if (method_name.equals(library_method))
+			//return Kind.LIBRARY_METHOD;
+			return Kind.STATIC_METHOD;
+		else
+			return Kind.METHOD;
 	}
 
 	private void check_main(Method method){
