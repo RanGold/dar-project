@@ -44,6 +44,14 @@ public class SymbolTable {
 		return false;
 	}
 	
+	public boolean existEntryRecursive(String key){
+		if (entries.containsKey(key))
+			return true;
+		if (type.equals(SymbolTableTypes.StatementBlock))
+			return parentSymbolTable.existEntryRecursive(key);
+		return false;
+	}
+	
 	public Symbol getEntry(String key){
 		return entries.get(key);
 	}
