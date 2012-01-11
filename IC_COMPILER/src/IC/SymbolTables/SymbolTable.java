@@ -47,13 +47,22 @@ public class SymbolTable {
 	public boolean existEntryRecursive(String key){
 		if (entries.containsKey(key))
 			return true;
-		if (type.equals(SymbolTableTypes.StatementBlock))
+		if (!type.equals(SymbolTableTypes.Class))
 			return parentSymbolTable.existEntryRecursive(key);
 		return false;
 	}
 	
 	public Symbol getEntry(String key){
 		return entries.get(key);
+	}
+	
+	public Symbol getEntryRecursive(String key){
+		Symbol ret = entries.get(key);
+		if (ret!=null)
+			return ret;
+		if (!type.equals(SymbolTableTypes.Class))
+			return parentSymbolTable.getEntryRecursive(key);
+		return null;
 	}
 
 	public SymbolTable getParentSymbolTable() {
