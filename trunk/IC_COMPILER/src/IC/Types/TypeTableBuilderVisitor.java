@@ -52,7 +52,8 @@ public class TypeTableBuilderVisitor implements Visitor {
 			icClass.accept(this);
 		}
 		
-		return TypeTable.validateTypesTable();
+		TypeTable.validateTypesTable();
+		return null;
 	}
 
 	@Override

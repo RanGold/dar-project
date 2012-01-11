@@ -22,9 +22,6 @@ public class TypeTable {
 	// Maps identifiers to method types
 	private static Map<String, MethodType> uniqueMethodTypes = new LinkedHashMap<String, MethodType>();
 
-	// Flag indicating the table's validity
-	private static UserType invalidUserType = null;
-
 	// Primitive types
 	public static PrimitiveType intType = new IntType();
 	public static PrimitiveType boolType = new BoolType();
@@ -46,11 +43,8 @@ public class TypeTable {
 	// Returns existing unique class type object or null for non existing
 	public static Type getClassType(UserType identifier) {
 		if (!TypeTable.uniqueClassTypes.containsKey(identifier.getName())) {
-			if (TypeTable.invalidUserType != null) {
-				TypeTable.invalidUserType = identifier;	
-			}
-			
-			return TypeTable.nullType;
+			throw new SemanticError("Error using undefined class type " + identifier.getName(), 
+					identifier.getLine());
 		} else {
 			return TypeTable.uniqueClassTypes.get(identifier.getName());
 		}
@@ -58,11 +52,8 @@ public class TypeTable {
 	
 	public static Type getClassType(NewClass identifier) {
 		if (!TypeTable.uniqueClassTypes.containsKey(identifier.getName())) {
-			if (TypeTable.invalidUserType != null) {
-				TypeTable.invalidUserType = new UserType(identifier.getLine(), identifier.getName());	
-			}
-			
-			return TypeTable.nullType;
+			throw new SemanticError("Error using undefined class type " + identifier.getName(), 
+					identifier.getLine());
 		} else {
 			return TypeTable.uniqueClassTypes.get(identifier.getName());
 		}
@@ -85,6 +76,11 @@ public class TypeTable {
 			// class type object already created – return it
 			cls = uniqueClassTypes.get(identifier);
 		} else {
+			if (icClass.getSuperClassName() != null && TypeTable.getClassType(icClass.getSuperClassName()) == null) {
+				throw new SemanticError("Error using extension to undefined class type " + icClass.getSuperClassName(), 
+						icClass.getLine());
+			}
+			
 			// object doesn’t exist – create and return it
 			cls = new ClassType(icClass);
 			uniqueClassTypes.put(identifier, cls);
@@ -93,18 +89,12 @@ public class TypeTable {
 		return cls;
 	}
 
-	public static SemanticError validateTypesTable() {
-		// Check for invalid class used
-		if (TypeTable.invalidUserType != null) {
-			return new SemanticError("Error using undefined class type " + TypeTable.invalidUserType.getName(), 
-					TypeTable.invalidUserType.getLine());
-		}
-		
+	public static void validateTypesTable() {	
 		// Checking for class existence
 		for (ClassType classType : TypeTable.uniqueClassTypes.values()) {
 			String superName = classType.getICClass().getSuperClassName();
 			if (superName != null && TypeTable.getClassType(superName) == null) {
-				return new SemanticError("The superclass " + superName
+				throw new SemanticError("The superclass " + superName
 						+ " doesn't exist for "
 						+ classType.getICClass().getName(), classType
 						.getICClass().getLine());
@@ -119,14 +109,12 @@ public class TypeTable {
 			String superName = classType.getICClass().getSuperClassName();
 			if (superName != null
 					&& TypeTable.getClassType(superName).subtypeof(classType)) {
-				return new SemanticError("The superclass " + superName
+				throw new SemanticError("The superclass " + superName
 						+ " is a subclass of "
 						+ classType.getICClass().getName(), classType
 						.getICClass().getLine());
 			}
 		}
-		
-		return null;
 	}
 
 	// Returns unique method type object
