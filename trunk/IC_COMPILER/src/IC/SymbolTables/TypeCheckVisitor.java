@@ -173,13 +173,16 @@ public class TypeCheckVisitor implements Visitor {
 		
 		if (!location.isExternal()){
 			//if location is not external - we return the value in the symbol table
-			Symbol symb = location.getenclosingScope().getEntry(location.getName());
+			Symbol symb = location.getenclosingScope().getEntryRecursive(location.getName());
+			if (symb == null) {
+				//does not exists in method or as class formal
+				throw new SemanticError(location.getName() + " has not been declared" , location.getLine());
+			}
 			return symb.getType();
 		}else{
-			//location is external
-			//Type locationType = (Type)location.getLocation().accept(this); 
+			//location is external 
 			if (location.getLocation().getenclosingScope().existEntry(location.getName())){
-				return location.getLocation().getenclosingScope().getEntry(location.getName()).getType();
+				return location.getLocation().getenclosingScope().getEntryRecursive(location.getName()).getType();
 			}else{
 				throw new SemanticError(location.getName() + " does not exist in scope" , location.getLine());
 			}
@@ -210,24 +213,35 @@ public class TypeCheckVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(NewClass newClass) {
 		Type newClasstype = TypeTable.getClassType(newClass);
 		if (newClasstype == TypeTable.nullType) 
-			throw new SemanticError("Not a valid class type name", newClass.getLine());
+			throw new SemanticError("Not a valid class type name - " + newClass.getName(), newClass.getLine());
 		return newClasstype;
 	}
 
-	@Override
+
 	public Object visit(NewArray newArray) {
-		// TODO Auto-generated method stub
-		return null;
+		//check the size is int type
+		Type sizeType = (Type) newArray.getSize().accept(this);
+		if (!sizeType.subtypeof(TypeTable.intType)){
+			throw new SemanticError("Array length is not an int value - " + newArray.getSize() ,newArray.getLine());
+		}
+		
+		//return the array type
+		return newArray.getEnclosingType();
 	}
 
-	@Override
 	public Object visit(Length length) {
-		// TODO Auto-generated method stub
-		return null;
+		
+		//check array is of array type
+		Type arrType = (Type) length.getArray().accept(this);
+		if (!arrType.toString().endsWith("[]")){
+			throw new SemanticError(length.getArray() + " not an array type" + length.getLine());
+		}
+		
+		//return int
+		return TypeTable.intType;
 	}
 
 
