@@ -9,9 +9,9 @@ import IC.AST.Visitor;
 import IC.Parser.Lexer;
 import IC.Parser.LibraryParser;
 import IC.Parser.Parser;
+import IC.SemanticChecks.TypeCheckVisitor;
 import IC.SymbolTables.SymbolTableBuilder;
 import IC.SymbolTables.SymbolTablePrint;
-import IC.SymbolTables.TypeCheckVisitor;
 import IC.Types.TypeTable;
 import IC.Types.TypeTableBuilderVisitor;
 
