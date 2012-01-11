@@ -153,7 +153,8 @@ public class TypeCheckVisitor implements Visitor {
 			Type localVariableType = localVariable.getenclosingScope()
 					.getEntry(localVariable.getName()).getType();
 			if (!initValueType.subtypeof(localVariableType)) {
-				throw new SemanticError("Type mimatch", localVariable.getLine());
+				throw new SemanticError("Type mismatch - can't assign " + initValueType +
+						" to " + localVariableType , localVariable.getLine());
 			}
 		}
 		return true;
