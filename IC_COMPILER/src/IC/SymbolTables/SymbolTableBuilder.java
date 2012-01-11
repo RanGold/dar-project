@@ -68,7 +68,6 @@ public class SymbolTableBuilder implements Visitor {
 		else if (method_name.equals(static_method))
 			return Kind.STATIC_METHOD;
 		else if (method_name.equals(library_method))
-			//return Kind.LIBRARY_METHOD;
 			return Kind.STATIC_METHOD;
 		else
 			return Kind.METHOD;
