@@ -8,7 +8,8 @@ public enum Kind {
 	VIRTUAL_METHOD("Virtual method"),
 	METHOD("Method"),
 	VAR("Local variable"),
-	RET_VAR("Return variable");
+	RET_VAR("Return variable"),
+	THIS("this variable");
 	
 	private String name;
 	
