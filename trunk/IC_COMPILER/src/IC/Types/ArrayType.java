@@ -18,4 +18,9 @@ public class ArrayType extends Type {
 	public TypeClass getTypeClass() {
 		return TypeClass.Array;
 	}
+	
+	
+	public Type getElementType(){
+		return this.elemType;
+	}
 }
