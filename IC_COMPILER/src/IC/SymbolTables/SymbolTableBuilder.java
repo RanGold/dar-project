@@ -186,6 +186,9 @@ public class SymbolTableBuilder implements Visitor {
 	}
 
 	private void methodVisit(Method method){
+		//ad $ret to symbol table
+		method.getenclosingScope().addEntry("$ret",new Symbol("$ret", method.getType().getEnclosingType(), Kind.RET_VAR),method.getLine());
+		
 		String name;
 		for (Formal formal : method.getFormals()){
 			name = formal.getName();
@@ -250,7 +253,7 @@ public class SymbolTableBuilder implements Visitor {
 		return null;
 	}
 
-	@Override//TODO add $ret here
+	@Override
 	public Object visit(Return returnStatement) {
 		// TODO Auto-generated method stub
 		return null;

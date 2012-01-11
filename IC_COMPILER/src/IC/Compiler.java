@@ -111,8 +111,6 @@ public class Compiler {
 		SymbolTablePrint pr = new SymbolTablePrint(ICRoot);
 		pr.printSymbolTable();
 
-		System.out.println(TypeTable.getString(pathTOic));
-
 		TypeCheckVisitor tc = new TypeCheckVisitor();
 		ICRoot.accept(tc);		
 	}
