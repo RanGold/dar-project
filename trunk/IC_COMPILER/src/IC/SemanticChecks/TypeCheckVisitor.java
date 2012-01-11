@@ -319,16 +319,7 @@ public class TypeCheckVisitor implements Visitor {
 
 
 	public Object visit(Literal literal) {
-        IC.LiteralTypes type = literal.getType();                    
-        	switch (type){                          
-        	case STRING: return TypeTable.stringType;                         
-        	case INTEGER: return TypeTable.intType;     
-        	case TRUE: return TypeTable.boolType;                      
-        	case FALSE: return TypeTable.boolType;                    
-        	case NULL: return TypeTable.nullType;                      
-        	}      
-        	//should not get here
-        	return TypeTable.nullType;
+		return literal.getEnclosingType();
 	}
 
 

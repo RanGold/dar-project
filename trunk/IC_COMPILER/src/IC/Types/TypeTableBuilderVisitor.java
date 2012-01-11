@@ -39,6 +39,7 @@ import IC.AST.VirtualCall;
 import IC.AST.VirtualMethod;
 import IC.AST.Visitor;
 import IC.AST.While;
+import IC.SemanticChecks.SemanticError;
 
 public class TypeTableBuilderVisitor implements Visitor {
 	
@@ -147,16 +148,16 @@ public class TypeTableBuilderVisitor implements Visitor {
 
 	@Override
 	public Object visit(CallStatement callStatement) {
-		for (Expression exp : callStatement.getCall().getArguments()) {
-			exp.accept(this);
-		}
-		
+		callStatement.getCall().accept(this);
+		callStatement.setEnclosingType(callStatement.getCall().getEnclosingType());
 		return null;
 	}
 
 	@Override
 	public Object visit(Return returnStatement) {
-		return returnStatement.getValue().accept(this);
+		returnStatement.getValue().accept(this);
+		returnStatement.setEnclosingType(returnStatement.getValue().getEnclosingType());
+		return returnStatement.getEnclosingType(); 
 	}
 
 	@Override
@@ -290,7 +291,28 @@ public class TypeTableBuilderVisitor implements Visitor {
 
 	@Override
 	public Object visit(Literal literal) {
-		return null;
+		IC.LiteralTypes type = literal.getType();
+		switch (type) {
+		case STRING:
+			 literal.setEnclosingType(TypeTable.stringType);
+			 break;
+		case INTEGER:
+			literal.setEnclosingType(TypeTable.intType);
+			break;
+		case TRUE:
+			literal.setEnclosingType(TypeTable.boolType);
+			break;
+		case FALSE:
+			literal.setEnclosingType(TypeTable.boolType);
+			break;
+		case NULL:
+			literal.setEnclosingType(TypeTable.nullType);
+			break;
+		default:
+			throw new SemanticError("Undefined literal type", literal.getLine());
+		}
+
+		return literal.getEnclosingType();
 	}
 
 	@Override
