@@ -47,9 +47,9 @@ public class SymbolTable {
 	public boolean existEntryRecursive(String key){
 		if (entries.containsKey(key))
 			return true;
-		if (!type.equals(SymbolTableTypes.Class))
-			return parentSymbolTable.existEntryRecursive(key);
-		return false;
+		if (type.equals(SymbolTableTypes.Global))
+			return false;
+		return parentSymbolTable.existEntryRecursive(key);
 	}
 	
 	public Symbol getEntry(String key){
@@ -60,9 +60,9 @@ public class SymbolTable {
 		Symbol ret = entries.get(key);
 		if (ret!=null)
 			return ret;
-		if (!type.equals(SymbolTableTypes.Class))
-			return parentSymbolTable.getEntryRecursive(key);
-		return null;
+		if (type.equals(SymbolTableTypes.Global))
+			return null;
+		return parentSymbolTable.getEntryRecursive(key);
 	}
 
 	public SymbolTable getParentSymbolTable() {
