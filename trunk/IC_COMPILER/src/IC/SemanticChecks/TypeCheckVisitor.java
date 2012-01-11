@@ -25,7 +25,7 @@ public class TypeCheckVisitor implements Visitor {
 		}
 		return true;
 	}
-//TODO - maybe we should check that the class exists
+	//TODO - maybe we should check that the class exists
 	public Object visit(Field field) {
 		//the fields are always legal, this function never calls
 		return true;
@@ -47,12 +47,10 @@ public class TypeCheckVisitor implements Visitor {
 		return method_visit(method);
 	}
 
-
 	public Object visit(LibraryMethod method) {
 		return method_visit(method);
 	}
 
-	//TODO - maybe we should check that the class exists - same as fields
 	public Object visit(Formal formal) {
 		//the formals are legal, this function never called
 		return true;
@@ -84,7 +82,7 @@ public class TypeCheckVisitor implements Visitor {
 		if (callStatement.getCall().accept(this) == null) return null;
 		return true;
 	}
-
+	
 	//RAN
 	public Object visit(Return returnStatement) {
 		Type returnValueType;
@@ -234,7 +232,7 @@ public class TypeCheckVisitor implements Visitor {
 
 
 	public Object visit(NewArray newArray) {
-		//check the size is int type
+		//check the size is integer type
 		Type sizeType = (Type) newArray.getSize().accept(this);
 		if (!sizeType.subtypeof(TypeTable.intType)){
 			throw new SemanticError("Array length is not an int value - " + newArray.getSize() ,newArray.getLine());
