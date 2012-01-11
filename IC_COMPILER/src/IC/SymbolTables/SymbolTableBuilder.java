@@ -15,6 +15,7 @@ public class SymbolTableBuilder implements Visitor {
 	private Map<String,SymbolTable> classes;
 	
 	public SymbolTableBuilder(String path){
+		this.classes = new HashMap<String,SymbolTable>();
 		this.path = path;
 		this.seen_main = false;
 	}
@@ -309,12 +310,24 @@ public class SymbolTableBuilder implements Visitor {
 	@Override
 	public Object visit(LocalVariable localVariable) {
 		String name = localVariable.getName();
+		
+		//add variable to symbol table
 		localVariable.getenclosingScope().addEntry(name, new Symbol(name,localVariable.getEnclosingType(),Kind.VAR),localVariable.getLine());
+		
+		localVariable.getType().setenclosingScope(localVariable.getenclosingScope());
+		localVariable.getType().accept(this);
+		
+		if (localVariable.hasInitValue()){
+			localVariable.getInitValue().setenclosingScope(localVariable.getenclosingScope());
+			localVariable.getInitValue().accept(this);
+		}
+		
 		return null;
 	}
 
 	@Override
 	public Object visit(VariableLocation location) {
+		System.out.println("hererer3434343ererre");
 		if (location.isExternal()) {
 			location.getLocation().setenclosingScope(location.getenclosingScope());//TODO: fix this assignment
 			location.getLocation().accept(this);
