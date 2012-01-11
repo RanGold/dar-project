@@ -25,7 +25,7 @@ public class TypeCheckVisitor implements Visitor {
 		}
 		return true;
 	}
-	//TODO - maybe we should check that the class exists
+	
 	public Object visit(Field field) {
 		//the fields are always legal, this function never calls
 		return true;
@@ -151,7 +151,6 @@ public class TypeCheckVisitor implements Visitor {
 
 	
 	public Object visit(LocalVariable localVariable) {
-		//TODO - check if i write: "A a; that A is ok to write here "
 		// check initial value of local variable
 		if (localVariable.hasInitValue()) {
 			Type initValueType = (Type) localVariable.getInitValue().accept(this);
