@@ -22,13 +22,7 @@ public class ClassType extends Type {
 			return false;
 		} else {
 			ClassType oc = (ClassType)t;
-			if (!(super.equals(oc) || (this.icClass.getSuperClassName() != null && TypeTable.getClassType(this.icClass.getSuperClassName()).equals(oc)))){
-				if (TypeTable.getClassType(this.icClass.getSuperClassName())==null)
-					return false;
-				return TypeTable.getClassType(this.icClass.getSuperClassName()).subtypeof(t);
-			}
-			else
-				return true;
+			return (super.equals(oc) || (this.icClass.getSuperClassName() != null && TypeTable.getClassType(this.icClass.getSuperClassName()).subtypeof(oc)));
 		}
 	}
 
