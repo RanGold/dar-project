@@ -12,6 +12,7 @@ public class SymbolTableBuilder implements Visitor {
 
 	private String path;
 	private boolean seen_main;
+	private Map<String,SymbolTable> classes;
 	
 	public SymbolTableBuilder(String path){
 		this.path = path;
@@ -48,6 +49,7 @@ public class SymbolTableBuilder implements Visitor {
 				temp.addChild(stClass);
 				classes_tobe_extended.put(className, stClass);
 			}
+			classes.put(className, stClass);
 			icClass.setenclosingScope(stClass);
 			icClass.accept(this);
 		}
@@ -313,7 +315,10 @@ public class SymbolTableBuilder implements Visitor {
 
 	@Override
 	public Object visit(VariableLocation location) {
-		// TODO Auto-generated method stub
+		if (location.isExternal()) {
+			location.getLocation().setenclosingScope(location.getenclosingScope());//TODO: fix this assignment
+			location.getLocation().accept(this);
+		}
 		return null;
 	}
 
