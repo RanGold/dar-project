@@ -11,6 +11,7 @@ import IC.Parser.LibraryParser;
 import IC.Parser.Parser;
 import IC.SymbolTables.SymbolTableBuilder;
 import IC.SymbolTables.SymbolTablePrint;
+import IC.SymbolTables.TypeCheckVisitor;
 import IC.Types.TypeTable;
 import IC.Types.TypeTableBuilderVisitor;
 
@@ -111,5 +112,8 @@ public class Compiler {
 		pr.printSymbolTable();
 		
 		System.out.println(TypeTable.getString(pathTOic));
+		
+		TypeCheckVisitor tc = new TypeCheckVisitor();
+		ICRoot.accept(tc);
 	}
 }
