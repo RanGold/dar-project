@@ -47,6 +47,7 @@ import IC.Types.TypeTable;
 public class TypeCheckVisitor implements Visitor {
 	
 	private int inLoop = 0;
+	private boolean inStaticMethod;
 
 	public Object visit(Program program) {
 		for (ICClass icClass : program.getClasses()) {
@@ -69,23 +70,26 @@ public class TypeCheckVisitor implements Visitor {
 	}
 
 	//helper function - for all types of method
-	private Object method_visit(Method method){
+	private Object method_visit(Method method, boolean isStatic){
+		inStaticMethod = isStatic;
 		for (Statement s : method.getStatements()){
 			s.accept(this);
 		}
+		inStaticMethod = false;
 		return true;
 	}
 	
 	public Object visit(VirtualMethod method) {
-		return method_visit(method);
+		return method_visit(method, false);
 	}
 
 	public Object visit(StaticMethod method) {
-		return method_visit(method);
+		return method_visit(method, true);
 	}
 
 	public Object visit(LibraryMethod method) {
-		return method_visit(method);
+		// TODO : is static method?
+		return method_visit(method, true);
 	}
 
 	public Object visit(Formal formal) {
@@ -308,6 +312,9 @@ public class TypeCheckVisitor implements Visitor {
 	}
 
 	public Object visit(This thisExpression) {
+		if (inStaticMethod) {
+			throw new SemanticError("this expression cannot appear within a static method", thisExpression.getLine());
+		}
 		return thisExpression.getenclosingScope().getEntry("this").getType();
 	}
 
