@@ -1,9 +1,46 @@
 package IC.SemanticChecks;
 
-import IC.AST.*;
-
+import IC.AST.ArrayLocation;
+import IC.AST.Assignment;
+import IC.AST.Break;
+import IC.AST.Call;
+import IC.AST.CallStatement;
+import IC.AST.Continue;
+import IC.AST.ExpressionBlock;
+import IC.AST.Field;
+import IC.AST.Formal;
+import IC.AST.ICClass;
+import IC.AST.If;
+import IC.AST.Length;
+import IC.AST.LibraryMethod;
+import IC.AST.Literal;
+import IC.AST.LocalVariable;
+import IC.AST.LogicalBinaryOp;
+import IC.AST.LogicalUnaryOp;
+import IC.AST.MathBinaryOp;
+import IC.AST.MathUnaryOp;
+import IC.AST.Method;
+import IC.AST.NewArray;
+import IC.AST.NewClass;
+import IC.AST.PrimitiveType;
+import IC.AST.Program;
+import IC.AST.Return;
+import IC.AST.Statement;
+import IC.AST.StatementsBlock;
+import IC.AST.StaticCall;
+import IC.AST.StaticMethod;
+import IC.AST.This;
+import IC.AST.UserType;
+import IC.AST.VariableLocation;
+import IC.AST.VirtualCall;
+import IC.AST.VirtualMethod;
+import IC.AST.Visitor;
+import IC.AST.While;
+import IC.SymbolTables.Kind;
 import IC.SymbolTables.Symbol;
 import IC.Types.ArrayType;
+import IC.Types.ClassType;
+import IC.Types.MethodType;
 import IC.Types.Type;
 import IC.Types.TypeTable;
 
@@ -83,15 +120,18 @@ public class TypeCheckVisitor implements Visitor {
 		return true;
 	}
 	
-	//RAN
 	public Object visit(Return returnStatement) {
 		Type returnValueType;
-		if (returnStatement.hasValue()){
+		if (returnStatement.hasValue()) {
 			returnValueType = (Type) returnStatement.getValue().accept(this);
-		}else{
+		} else {
 			returnValueType = TypeTable.voidType;
 		}
-		return true; //TODO - finish it when we have $ret
+		
+		if (!returnValueType.subtypeof(returnStatement.getenclosingScope().getEntry("$ret").getType())) {
+			throw new SemanticError("Return value type is not a subtype of the method's return value", returnStatement.getLine());
+		}
+		return returnValueType;
 	}
 
 	public Object visit(If ifStatement) {
@@ -204,22 +244,71 @@ public class TypeCheckVisitor implements Visitor {
 		return ((ArrayType)arrType).getElementType();
 	}
 
-	//RAN
+	private Object checkCallArguments(Call call, Symbol methodSym) {
+		MethodType methodType = (MethodType)methodSym.getType();
+		if (methodType.getArguments().size() != call.getArguments().size()) {
+			throw new SemanticError("Invalid number of arguments for method " + call.getName(), call.getLine());
+		}
+		
+		for (int i = 0; i < methodType.getArguments().size(); i++) {
+			Type curArgType = (Type)call.getArguments().get(i).accept(this); 
+			if (!curArgType.subtypeof(methodType.getArguments().get(i))) {
+				throw new SemanticError("Argument number " + i + " is of invalid type, " +
+						"for method " + call.getName(), call.getLine());
+			}
+		}
+		
+		return methodType.getReturnVal();
+	}
+	
 	public Object visit(StaticCall call) {
-		// TODO Auto-generated method stub
-		return null;
+		Symbol classSym = call.getenclosingScope().getEntryRecursive(call.getClassName());
+		
+		if (classSym == null) {
+			throw new SemanticError("Class " + call.getClassName() + " doesn't exist", call.getLine());
+		} else if (classSym.getKind() != IC.SymbolTables.Kind.CLASS) {
+			throw new SemanticError("Identifier " + call.getClassName() + " is not a class type", call.getLine());
+		} else {
+			ICClass classRef = ((ClassType)classSym.getType()).getICClass();
+			Symbol methodSym = classRef.getenclosingScope().getEntry(call.getName());
+			if (methodSym == null) {
+				throw new SemanticError("Identifier " + call.getName() + " doesn't exist in class " + call.getClassName(), call.getLine());
+			} else if (methodSym.getKind() != Kind.STATIC_METHOD) {
+				throw new SemanticError("There is not static method " + call.getName() + " in class " + call.getClassName(), call.getLine());
+			} else {
+				return checkCallArguments(call, methodSym);
+			}
+		}
 	}
 
-	//RAN
 	public Object visit(VirtualCall call) {
-		// TODO Auto-generated method stub
-		return null;
+		Symbol methodSym = null;
+		if (!call.isExternal()) {
+			// TODO : check this!
+			methodSym = call.getenclosingScope().getEntryRecursive(call.getName());
+		} else {
+			Type locType = (Type) call.getLocation().accept(this);
+
+			if (!(locType instanceof ClassType)) {
+				throw new SemanticError("Invalid call", call.getLine());
+			}
+
+			methodSym = ((ClassType) locType).getICClass().getenclosingScope()
+					.getEntry(call.getName());
+		}
+		
+		if (methodSym == null) {
+			throw new SemanticError("Method " + call.getName() + " doesn't exist", call.getLine());
+		} else if (methodSym.getKind() != Kind.VIRTUAL_METHOD) {
+			throw new SemanticError("identifier " + call.getName() + " isn't a virtual method", call.getLine());
+		} else {
+			return checkCallArguments(call, methodSym);
+		}
+		
 	}
 
-	//RAN
 	public Object visit(This thisExpression) {
-		// TODO Auto-generated method stub
-		return null;
+		return thisExpression.getenclosingScope().getEntry("this").getType();
 	}
 
 	public Object visit(NewClass newClass) {
