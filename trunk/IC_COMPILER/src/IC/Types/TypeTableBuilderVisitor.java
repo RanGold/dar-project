@@ -254,7 +254,9 @@ public class TypeTableBuilderVisitor implements Visitor {
 
 	@Override
 	public Object visit(NewArray newArray) {
-		return newArray.getType().accept(this);
+		Type t = (Type)newArray.getType().accept(this);
+		newArray.setEnclosingType(t);
+		return t;
 	}
 
 	@Override

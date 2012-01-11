@@ -364,6 +364,7 @@ expr ::= location:l
 		:}
 		| NEW type:t LB expr:e RB
 		{:
+			t.incrementDimension();
 			RESULT =  new NewArray(t, e); 
 			print_debug_info("new expr");
 		:}	
