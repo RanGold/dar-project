@@ -7,6 +7,8 @@ import IC.Types.Type;
 import IC.Types.TypeTable;
 
 public class TypeCheckVisitor implements Visitor {
+	
+	private int inLoop = 0;
 
 	public Object visit(Program program) {
 		for (ICClass icClass : program.getClasses()) {
@@ -82,7 +84,7 @@ public class TypeCheckVisitor implements Visitor {
 		return true;
 	}
 
-	@Override
+	//RAN
 	public Object visit(Return returnStatement) {
 		Type returnValueType;
 		if (returnStatement.hasValue()){
@@ -117,21 +119,27 @@ public class TypeCheckVisitor implements Visitor {
 		if (!conditionType.subtypeof(TypeTable.boolType)) {
 			throw new SemanticError("Condition in while statement is not of type boolean",whileStatement.getCondition().getLine());
 		}
+		inLoop++;
 		
 		//check the operation in whileStatement
 		whileStatement.getOperation().accept(this);
-
-		//TODO - add break check in here
+		
+		inLoop--;
 		return true;
 	}
 
 	public Object visit(Break breakStatement) {
-		//TODO - add break check in here
+		if (inLoop==0){
+			throw new SemanticError("Break outside of loop", breakStatement.getLine());
+		}		
 		return true;
 	}
 
 	public Object visit(Continue continueStatement) {
-		//TODO - add break check in here
+		
+		if (inLoop==0){
+			throw new SemanticError("Continue outside of loop", continueStatement.getLine());
+		}		
 		return true;
 	}
 
@@ -178,25 +186,25 @@ public class TypeCheckVisitor implements Visitor {
 		}
 	}
 
-	@Override
+	//RAN
 	public Object visit(ArrayLocation location) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
+	//RAN
 	public Object visit(StaticCall call) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
+	//RAN
 	public Object visit(VirtualCall call) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
+	//RAN
 	public Object visit(This thisExpression) {
 		// TODO Auto-generated method stub
 		return null;
