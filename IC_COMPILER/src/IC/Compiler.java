@@ -97,23 +97,23 @@ public class Compiler {
 			System.out.println(ICRoot.accept(printer));
 		}
 		
-		TypeTableBuilderVisitor t = new TypeTableBuilderVisitor();
-		Exception b = (Exception) t.visit(ICRoot);
-		if (b!=null){
-			System.out.println(b.getMessage());
-			System.exit(-1);
+		try {
+			TypeTableBuilderVisitor t = new TypeTableBuilderVisitor();
+			t.visit(ICRoot);
+			System.out.println(TypeTable.getString(pathTOic));
+		} catch (RuntimeException exp) {
+			System.err.println(exp.getMessage());
 		}
-		
-		
-		Visitor s=new SymbolTableBuilder(pathTOic);
+
+		Visitor s = new SymbolTableBuilder(pathTOic);
 		s.visit(ICRoot);
-		
+
 		SymbolTablePrint pr = new SymbolTablePrint(ICRoot);
 		pr.printSymbolTable();
-		
+
 		System.out.println(TypeTable.getString(pathTOic));
-		
+
 		TypeCheckVisitor tc = new TypeCheckVisitor();
-		ICRoot.accept(tc);
+		ICRoot.accept(tc);		
 	}
 }
