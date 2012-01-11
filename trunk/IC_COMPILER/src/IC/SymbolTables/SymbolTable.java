@@ -101,6 +101,8 @@ public class SymbolTable {
 		else
 			output = type + ": " + id + "\n";
 		for (Entry<String,Symbol> entry : entries.entrySet()){
+			if (entry.getValue().getKind().equals(Kind.RET_VAR))
+				continue;
 			output += "\t" + entry.getValue() + "\n";
 		}
 		if (children.size()>0){
