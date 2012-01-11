@@ -50,7 +50,7 @@ public class SymbolTableBuilder implements Visitor {
 				temp.addChild(stClass);
 				classes_tobe_extended.put(className, stClass);
 			}
-			classes.put(className, stClass);
+			classes.put(className, stClass);//TODO: NEEDED?????????
 			icClass.setenclosingScope(stClass);
 			icClass.accept(this);
 		}
