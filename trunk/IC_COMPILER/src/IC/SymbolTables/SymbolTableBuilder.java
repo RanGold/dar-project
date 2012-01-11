@@ -12,10 +12,10 @@ public class SymbolTableBuilder implements Visitor {
 
 	private String path;
 	private boolean seen_main;
-	private Map<String,SymbolTable> classes;
+	private Map<String,ICClass> classes;
 	
 	public SymbolTableBuilder(String path){
-		this.classes = new HashMap<String,SymbolTable>();
+		this.classes = new HashMap<String,ICClass>();
 		this.path = path;
 		this.seen_main = false;
 	}
@@ -50,7 +50,7 @@ public class SymbolTableBuilder implements Visitor {
 				temp.addChild(stClass);
 				classes_tobe_extended.put(className, stClass);
 			}
-			classes.put(className, stClass);//TODO: NEEDED?????????
+			classes.put(className, icClass);//TODO: NEEDED?????????
 			icClass.setenclosingScope(stClass);
 			icClass.accept(this);
 		}
@@ -186,7 +186,7 @@ public class SymbolTableBuilder implements Visitor {
 	}
 
 	private void methodVisit(Method method){
-		//ad $ret to symbol table
+		//add $ret to symbol table
 		method.getenclosingScope().addEntry("$ret",new Symbol("$ret", method.getType().getEnclosingType(), Kind.RET_VAR),method.getLine());
 		
 		String name;
@@ -200,10 +200,15 @@ public class SymbolTableBuilder implements Visitor {
 		}
 	}
 	
-	//TODO add ret and this
+	private IC.Types.Type getTheClassType(SymbolTable st){
+		String name = st.getID();
+		return classes.get(name).getEnclosingType();
+	}
+	
 	@Override
 	public Object visit(VirtualMethod method) {
 		methodVisit(method);
+		method.getenclosingScope().addEntry("this", new Symbol("this",getTheClassType(method.getenclosingScope().getParentSymbolTable()),Kind.THIS), method.getLine());
 		return null;
 	}
 

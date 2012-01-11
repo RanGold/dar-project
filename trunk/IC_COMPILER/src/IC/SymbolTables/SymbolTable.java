@@ -81,6 +81,10 @@ public class SymbolTable {
 	public SymbolTableTypes getType(){
 		return type;
 	}
+	
+	public String getID(){
+		return id;
+	}
 
 	private String stmtBlockLocation(SymbolTable st){
 		String location="";
@@ -101,7 +105,7 @@ public class SymbolTable {
 		else
 			output = type + ": " + id + "\n";
 		for (Entry<String,Symbol> entry : entries.entrySet()){
-			if (entry.getValue().getKind().equals(Kind.RET_VAR))
+			if (entry.getValue().getKind().equals(Kind.RET_VAR) || entry.getValue().getKind().equals(Kind.THIS))
 				continue;
 			output += "\t" + entry.getValue() + "\n";
 		}
