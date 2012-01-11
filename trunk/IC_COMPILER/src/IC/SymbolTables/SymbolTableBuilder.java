@@ -236,7 +236,11 @@ public class SymbolTableBuilder implements Visitor {
 
 	@Override
 	public Object visit(Assignment assignment) {
-		// TODO Auto-generated method stub
+		assignment.getVariable().setenclosingScope(assignment.getenclosingScope());
+		assignment.getVariable().accept(this);
+		assignment.getAssignment().setenclosingScope(assignment.getenclosingScope());
+		assignment.getAssignment().accept(this);
+		
 		return null;
 	}
 
@@ -255,8 +259,8 @@ public class SymbolTableBuilder implements Visitor {
 	@Override
 	public Object visit(If ifStatement) {
 
-//		ifStatement.getCondition().setenclosingScope(ifStatement.getenclosingScope());//TODO needed?
-//		ifStatement.getCondition().accept(this);
+		ifStatement.getCondition().setenclosingScope(ifStatement.getenclosingScope());
+		ifStatement.getCondition().accept(this);
 		
 		ifStatement.getOperation().setenclosingScope(ifStatement.getenclosingScope());
 		ifStatement.getOperation().accept(this);
@@ -272,8 +276,8 @@ public class SymbolTableBuilder implements Visitor {
 	@Override
 	public Object visit(While whileStatement) {
 		
-//		whileStatement.getCondition().setenclosingScope(whileStatement.getenclosingScope());//TODO needed?
-//		whileStatement.getCondition().accept(this);
+		whileStatement.getCondition().setenclosingScope(whileStatement.getenclosingScope());
+		whileStatement.getCondition().accept(this);
 		
 		whileStatement.getOperation().setenclosingScope(whileStatement.getenclosingScope());
 		whileStatement.getOperation().accept(this);
@@ -326,9 +330,8 @@ public class SymbolTableBuilder implements Visitor {
 
 	@Override
 	public Object visit(VariableLocation location) {
-		System.out.println("hererer3434343ererre");
 		if (location.isExternal()) {
-			location.getLocation().setenclosingScope(location.getenclosingScope());//TODO: fix this assignment
+			location.getLocation().setenclosingScope(location.getenclosingScope());
 			location.getLocation().accept(this);
 		}
 		return null;
@@ -378,25 +381,33 @@ public class SymbolTableBuilder implements Visitor {
 
 	@Override
 	public Object visit(MathBinaryOp binaryOp) {
-		// TODO Auto-generated method stub
+		binaryOp.getFirstOperand().setenclosingScope(binaryOp.getenclosingScope());
+		binaryOp.getFirstOperand().accept(this);
+		binaryOp.getSecondOperand().setenclosingScope(binaryOp.getenclosingScope());
+		binaryOp.getSecondOperand().accept(this);
 		return null;
 	}
 
 	@Override
 	public Object visit(LogicalBinaryOp binaryOp) {
-		// TODO Auto-generated method stub
+		binaryOp.getFirstOperand().setenclosingScope(binaryOp.getenclosingScope());
+		binaryOp.getFirstOperand().accept(this);
+		binaryOp.getSecondOperand().setenclosingScope(binaryOp.getenclosingScope());
+		binaryOp.getSecondOperand().accept(this);
 		return null;
 	}
 
 	@Override
 	public Object visit(MathUnaryOp unaryOp) {
-		// TODO Auto-generated method stub
+		unaryOp.getOperand().setenclosingScope(unaryOp.getenclosingScope());
+		unaryOp.getOperand().accept(this);
 		return null;
 	}
 
 	@Override
 	public Object visit(LogicalUnaryOp unaryOp) {
-		// TODO Auto-generated method stub
+		unaryOp.getOperand().setenclosingScope(unaryOp.getenclosingScope());
+		unaryOp.getOperand().accept(this);
 		return null;
 	}
 
