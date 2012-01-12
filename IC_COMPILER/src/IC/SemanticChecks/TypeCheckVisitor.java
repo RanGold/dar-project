@@ -1,5 +1,6 @@
 package IC.SemanticChecks;
 
+import IC.BinaryOps;
 import IC.AST.ArrayLocation;
 import IC.AST.Assignment;
 import IC.AST.Break;
@@ -175,7 +176,7 @@ public class TypeCheckVisitor implements Visitor {
 	}
 
 	public Object visit(Break breakStatement) {
-		if (inLoop==0){
+		if (!(inLoop>0)){
 			throw new SemanticError("Break outside of loop", breakStatement.getLine());
 		}		
 		return true;
@@ -183,7 +184,7 @@ public class TypeCheckVisitor implements Visitor {
 
 	public Object visit(Continue continueStatement) {
 		
-		if (inLoop==0){
+		if (!(inLoop>0)){
 			throw new SemanticError("Continue outside of loop", continueStatement.getLine());
 		}		
 		return true;
@@ -222,6 +223,11 @@ public class TypeCheckVisitor implements Visitor {
 			if (symb == null) {
 				//does not exists in method or as class formal
 				throw new SemanticError(location.getName() + " has not been declared" , location.getLine());
+			}
+			//check if in static function
+			if (inStaticMethod && symb.getKind()==Kind.FIELD){
+				throw new SemanticError(location.getName() + 
+						" is a field and cannot be used in a static function" , location.getLine());
 			}
 			return symb.getType();
 		}else{
@@ -306,7 +312,7 @@ public class TypeCheckVisitor implements Visitor {
 		
 		if (methodSym == null) {
 			throw new SemanticError("Method " + call.getName() + " doesn't exist", call.getLine());
-		} else if (methodSym.getKind() != Kind.VIRTUAL_METHOD) {
+		} else if (methodSym.getKind() != Kind.VIRTUAL_METHOD) {//TODO - here we will have to change
 			throw new SemanticError("identifier " + call.getName() + " isn't a virtual method", call.getLine());
 		} else {
 			return checkCallArguments(call, methodSym);
@@ -357,42 +363,65 @@ public class TypeCheckVisitor implements Visitor {
 		Type binaryOpType1 = (Type) binaryOp.getFirstOperand().accept(this);
 		Type binaryOpType2 = (Type) binaryOp.getSecondOperand().accept(this);
 		if (binaryOpType1 == null || binaryOpType2 == null) return null;
-		if (!binaryOpType1.subtypeof(TypeTable.intType) || !binaryOpType2.subtypeof(TypeTable.intType))
-			throw new SemanticError("Mathematical binary operation on a non-int values", binaryOp.getLine());
+		//if binaryOp is '+' types are both int or both string 
+		if (binaryOp.getOperator().equals(BinaryOps.PLUS)){
+			if (binaryOpType1.subtypeof(TypeTable.stringType) && binaryOpType2.subtypeof(TypeTable.stringType)){
+				return TypeTable.stringType;
+			}else{
+				if (!binaryOpType1.subtypeof(TypeTable.intType) || !binaryOpType2.subtypeof(TypeTable.intType)){
+					throw new SemanticError("Plus operation on non int values/non string values", binaryOp.getLine());
+				}	
+			}
+		}
+		
+		//else binaryOp is only on int types
+		if (!binaryOpType1.subtypeof(TypeTable.intType) || !binaryOpType2.subtypeof(TypeTable.intType)){
+			throw new SemanticError("Mathematical binary operation on a non-int values", binaryOp.getLine());			
+		}
 		return TypeTable.intType;
 	}
 
 	public Object visit(LogicalBinaryOp binaryOp) {
 		Type binaryOpType1 = (Type) binaryOp.getFirstOperand().accept(this);
 		Type binaryOpType2 = (Type) binaryOp.getSecondOperand().accept(this);
-		
-		if (!binaryOpType1.subtypeof(binaryOpType2) && !binaryOpType2.subtypeof(binaryOpType1)){
-		//if non of the operands is a sub type of the other	
-		//check if logical operation
-		if (binaryOp.getOperator() == IC.BinaryOps.LOR || binaryOp.getOperator() == IC.BinaryOps.LAND)
-				throw new SemanticError("Logical unary operation on a non-boolean type", binaryOp.getLine());
-		//check if the operand is one of the int operations <,<=,>,>=
-		if (binaryOp.getOperator() == IC.BinaryOps.GT || binaryOp.getOperator() == IC.BinaryOps.GTE 
-				|| binaryOp.getOperator() == IC.BinaryOps.LT || binaryOp.getOperator() == IC.BinaryOps.LTE)
-			throw new SemanticError("Comparing non-int type", binaryOp.getLine());
-		//operand is one of the comparison operands ==,!=
-		else 
-				throw new SemanticError("Comparing two different types - at least one has to be the sub type of the other", binaryOp.getLine());
+
+		if (!binaryOpType1.subtypeof(binaryOpType2)&& !binaryOpType2.subtypeof(binaryOpType1)) {
+			// if non of the operands is a sub type of the other
+
+			// check if logical operation
+			if (binaryOp.getOperator() == IC.BinaryOps.LOR || binaryOp.getOperator() == IC.BinaryOps.LAND)
+				throw new SemanticError("Logical unary operation on a non-boolean type",binaryOp.getLine());
+			// check if the operand is one of the int operations <,<=,>,>=
+			if (binaryOp.getOperator() == IC.BinaryOps.GT
+					|| binaryOp.getOperator() == IC.BinaryOps.GTE
+					|| binaryOp.getOperator() == IC.BinaryOps.LT
+					|| binaryOp.getOperator() == IC.BinaryOps.LTE){
+				throw new SemanticError("Comparing non-int type",binaryOp.getLine());				
+			}
+
+			// operand is one of the comparison operands ==,!=
+			else{
+				throw new SemanticError(
+						"Comparing two different types - at least one has to be the sub type of the other",
+						binaryOp.getLine());	
+			}
 		}
-        
-		
-		if ((binaryOp.getOperator() == IC.BinaryOps.LOR) ||(binaryOp.getOperator() == IC.BinaryOps.LAND))
-        {
-			// operator is one of "||","&&"                            
-			if (!binaryOpType1.subtypeof(TypeTable.boolType))                                          
-				throw new SemanticError("Logical operation on non-boolean values", binaryOp.getLine());
-		}
-		else if (binaryOp.getOperator() == IC.BinaryOps.GT || binaryOp.getOperator() == IC.BinaryOps.GTE 
-			|| binaryOp.getOperator() == IC.BinaryOps.LT || binaryOp.getOperator() == IC.BinaryOps.LTE)
-		{
-			// operator is one of "<=",">=", "<", ">"                                                         
-			if (!binaryOpType1.subtypeof(TypeTable.intType)){                                          
-					throw new SemanticError("Comparing non int values", binaryOp.getLine());                                		
+
+		if ((binaryOp.getOperator() == IC.BinaryOps.LOR)|| (binaryOp.getOperator() == IC.BinaryOps.LAND)) {
+			// operator is one of "||","&&"
+			if (!binaryOpType1.subtypeof(TypeTable.boolType)){
+				throw new SemanticError(
+						"Logical operation on non-boolean values",
+						binaryOp.getLine());
+			}
+
+		} else if (binaryOp.getOperator() == IC.BinaryOps.GT
+				|| binaryOp.getOperator() == IC.BinaryOps.GTE
+				|| binaryOp.getOperator() == IC.BinaryOps.LT
+				|| binaryOp.getOperator() == IC.BinaryOps.LTE) {
+			// operator is one of "<=",">=", "<", ">"
+			if (!binaryOpType1.subtypeof(TypeTable.intType)) {
+				throw new SemanticError("Comparing non int values",binaryOp.getLine());
 			}
 		}
 		return TypeTable.boolType;
@@ -404,7 +433,7 @@ public class TypeCheckVisitor implements Visitor {
         if (!unaryOpType.subtypeof(TypeTable.intType)){                                
         	throw new SemanticError("Mathematical unary operation on a non-integer type",unaryOp.getLine());
         }
-        return unaryOpType;
+        return TypeTable.intType;
 	}
 
 	public Object visit(LogicalUnaryOp unaryOp) {
@@ -412,7 +441,7 @@ public class TypeCheckVisitor implements Visitor {
         if (!unaryOpType.subtypeof(TypeTable.boolType)){                                
         	throw new SemanticError("Logical unary operation on a non-boolean type",unaryOp.getLine());
         }
-        return unaryOpType;
+        return TypeTable.boolType;
 }
 
 
