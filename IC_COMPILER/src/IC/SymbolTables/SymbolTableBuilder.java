@@ -323,8 +323,11 @@ public class SymbolTableBuilder implements Visitor {
 	public Object visit(LocalVariable localVariable) {
 		String name = localVariable.getName();
 		
-		//add variable to symbol table
-		localVariable.getenclosingScope().addEntry(name, new Symbol(name,localVariable.getEnclosingType(),Kind.VAR),localVariable.getLine());
+		Symbol varSym = new Symbol(name, localVariable.getEnclosingType(),
+				Kind.VAR, localVariable.hasInitValue());
+		// add variable to symbol table
+		localVariable.getenclosingScope().addEntry(name, varSym,
+				localVariable.getLine());
 		
 		localVariable.getType().setenclosingScope(localVariable.getenclosingScope());
 		localVariable.getType().accept(this);
