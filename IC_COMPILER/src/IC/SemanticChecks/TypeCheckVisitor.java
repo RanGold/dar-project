@@ -86,13 +86,10 @@ public class TypeCheckVisitor implements Visitor {
 	}
 
 	public Object visit(StaticMethod method) {
-		// TODO check overriding
 		return method_visit(method, true);
 	}
 
 	public Object visit(LibraryMethod method) {
-		// TODO check overriding
-		// TODO : is static method?
 		return method_visit(method, true);
 	}
 
@@ -231,11 +228,23 @@ public class TypeCheckVisitor implements Visitor {
 			}
 			return symb.getType();
 		}else{
-			//location is external 
-			if (location.getLocation().getenclosingScope().existEntryRecursive(location.getName())){
-				return location.getLocation().getenclosingScope().getEntryRecursive(location.getName()).getType();
-			}else{
-				throw new SemanticError(location.getName() + " does not exist in scope" , location.getLine());
+			Type locType = (Type)location.getLocation().accept(this);
+
+			if (!(locType instanceof ClassType)) {
+				throw new SemanticError("Invalid call", location.getLine());
+			}
+
+			ICClass cls = ((ClassType)locType).getICClass();
+			Symbol varSym = cls.getenclosingScope().getEntry(location.getName());
+			//location is external
+			if (varSym == null) {
+				throw new SemanticError("Identifier " + location.getName()
+						+ " doesn't exist in class " + cls.getName(),
+						location.getLine());
+			} else if (varSym.getKind() != Kind.FIELD) {
+				throw new SemanticError("There is not field " + location.getName() + " in class " + cls.getName(), location.getLine());
+			} else {
+				return varSym.getType();
 			}
 		}
 	}
@@ -312,8 +321,9 @@ public class TypeCheckVisitor implements Visitor {
 		
 		if (methodSym == null) {
 			throw new SemanticError("Method " + call.getName() + " doesn't exist", call.getLine());
-		} else if (methodSym.getKind() != Kind.VIRTUAL_METHOD) {//TODO - here we will have to change
-			throw new SemanticError("identifier " + call.getName() + " isn't a virtual method", call.getLine());
+		} else if (methodSym.getKind() != Kind.VIRTUAL_METHOD // TODO: check this
+				&& (call.isExternal() || methodSym.getKind() != Kind.STATIC_METHOD)) {
+			throw new SemanticError("identifier " + call.getName() + " isn't a valid call", call.getLine());
 		} else {
 			return checkCallArguments(call, methodSym);
 		}
