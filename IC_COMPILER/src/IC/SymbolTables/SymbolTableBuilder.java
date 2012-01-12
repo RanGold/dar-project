@@ -459,7 +459,8 @@ public class SymbolTableBuilder implements Visitor {
 
 	@Override
 	public Object visit(ExpressionBlock expressionBlock) {
-		// TODO Auto-generated method stub
+		expressionBlock.getExpression().setenclosingScope(expressionBlock.getenclosingScope());
+		expressionBlock.getExpression().accept(this);
 		return null;
 	}
 
