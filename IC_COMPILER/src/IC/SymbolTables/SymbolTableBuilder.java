@@ -74,24 +74,36 @@ public class SymbolTableBuilder implements Visitor {
 	}
 
 	private void check_main(Method method){
-		//check that no main message has been already defined
+		//check that the method is static
+		if(!get_method_kind(method.getClass().toString()).equals(Kind.STATIC_METHOD)){
+			//throw new SemanticError("The main method must be a static method",method.getLine());
+			return;
+		}
+		//check correct number of parameters
+		if (method.getFormals().size()!=1){
+			//throw new SemanticError("Wrong number of arguments for main method",method.getLine());
+			return;
+		}
+		//check parameter's type
+		if (!method.getFormals().get(0).getType().getEnclosingType().subtypeof(TypeTable.arrayType(TypeTable.stringType)) || method.getFormals().get(0).getType().getDimension()!=1){
+			//throw new SemanticError("The type of the input parameter of the main method must be \"string[]\"",method.getLine());
+			return;
+		}
+		//TODO delete lines below?
+//		//check name of input parameter
+//		if (!method.getFormals().get(0).getName().equals("args")) {
+//			// throw new
+//			// SemanticError("Input parameter in main method must be named \"args\"",method.getLine());
+//			return;
+//		}
+		//check return parameter
+		if (!method.getType().getEnclosingType().subtypeof(TypeTable.voidType)){
+			//throw new SemanticError("main method must return void",method.getLine());
+			return;
+		}
+		//check that no main message has already been defined
 		if (seen_main)
 			throw new SemanticError("More than one main method was defined",method.getLine());
-		//check that the method is static
-		if(!get_method_kind(method.getClass().toString()).equals(Kind.STATIC_METHOD))
-			throw new SemanticError("The main method must be a static method",method.getLine());
-		//check correct number of parameters
-		if (method.getFormals().size()!=1)
-			throw new SemanticError("Wrong number of arguments for main method",method.getLine());
-		//check parameter's type
-		if (!method.getFormals().get(0).getType().getEnclosingType().subtypeof(TypeTable.arrayType(TypeTable.stringType)) || method.getFormals().get(0).getType().getDimension()!=1)
-			throw new SemanticError("The type of the input parameter of the main method must be \"string[]\"",method.getLine());
-		//check name of input parameter
-		if (!method.getFormals().get(0).getName().equals("args"))
-			throw new SemanticError("Input parameter in main method must be named \"args\"",method.getLine());
-		//check return parameter
-		if (!method.getType().getEnclosingType().subtypeof(TypeTable.voidType))
-			throw new SemanticError("main method must return void",method.getLine());
 		seen_main = true;
 	}
 	
@@ -345,6 +357,10 @@ public class SymbolTableBuilder implements Visitor {
 		if (location.isExternal()) {
 			location.getLocation().setenclosingScope(location.getenclosingScope());
 			location.getLocation().accept(this);
+		}
+		else{
+			if (!location.getenclosingScope().existEntryRecursive(location.getName()))
+				throw new SemanticError("Variable "+location.getName()+" has been used before being declared.",location.getLine());
 		}
 		return null;
 	}
