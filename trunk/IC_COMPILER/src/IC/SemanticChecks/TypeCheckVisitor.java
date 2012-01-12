@@ -80,14 +80,17 @@ public class TypeCheckVisitor implements Visitor {
 	}
 	
 	public Object visit(VirtualMethod method) {
+		// TODO check overriding
 		return method_visit(method, false);
 	}
 
 	public Object visit(StaticMethod method) {
+		// TODO check overriding
 		return method_visit(method, true);
 	}
 
 	public Object visit(LibraryMethod method) {
+		// TODO check overriding
 		// TODO : is static method?
 		return method_visit(method, true);
 	}
