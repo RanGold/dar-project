@@ -18,6 +18,7 @@ int x;
 int[] a = new int[4+x];
 Quicksort f;
 f.a = new int[5];
+string s = null;
 }
 }
 

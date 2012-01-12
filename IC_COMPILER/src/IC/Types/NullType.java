@@ -8,6 +8,6 @@ public class NullType extends PrimitiveType {
 	}
 	
 	public boolean subtypeof(Type t) {
-		return ((t instanceof ClassType) || (t instanceof ArrayType));
+		return ((t instanceof ClassType) || (t instanceof ArrayType) || (t instanceof StringType));
 	}
 }
