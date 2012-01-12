@@ -273,7 +273,7 @@ public class SymbolTableBuilder implements Visitor {
 
 	@Override
 	public Object visit(Return returnStatement) {
-		// TODO Auto-generated method stub
+		returnStatement.getValue().setenclosingScope(returnStatement.getenclosingScope());
 		return null;
 	}
 
@@ -387,6 +387,10 @@ public class SymbolTableBuilder implements Visitor {
 
 	@Override
 	public Object visit(VirtualCall call) {
+		if (call.isExternal()) {
+			call.getLocation().setenclosingScope(call.getenclosingScope());
+			call.getLocation().accept(this);
+		}
 		callVisit(call);
 		return null;
 	}
@@ -411,7 +415,7 @@ public class SymbolTableBuilder implements Visitor {
 
 	@Override
 	public Object visit(Length length) {
-		// TODO Auto-generated method stub
+		length.getArray().setenclosingScope(length.getenclosingScope());
 		return null;
 	}
 
