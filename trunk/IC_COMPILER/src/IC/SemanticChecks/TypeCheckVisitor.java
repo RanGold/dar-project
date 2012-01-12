@@ -135,7 +135,7 @@ public class TypeCheckVisitor implements Visitor {
 			returnValueType = TypeTable.voidType;
 		}
 		
-		if (!returnValueType.subtypeof(returnStatement.getenclosingScope().getEntry("$ret").getType())) {
+		if (!returnValueType.subtypeof(returnStatement.getenclosingScope().getEntryRecursive("$ret").getType())) {
 			throw new SemanticError("Return value type is not a subtype of the method's return value", returnStatement.getLine());
 		}
 		return returnValueType;
