@@ -114,11 +114,11 @@ public class Compiler {
 			TypeCheckVisitor tc = new TypeCheckVisitor();
 			ICRoot.accept(tc);
 			
-			VarInitVisitor vi = new VarInitVisitor();
-			ICRoot.accept(vi);
-			
 			returnVisitor rv = new returnVisitor();
 			ICRoot.accept(rv);
+			
+			VarInitVisitor vi = new VarInitVisitor();
+			ICRoot.accept(vi);
 			
 		} catch (RuntimeException exp) {
 			System.err.println(exp.getMessage());
