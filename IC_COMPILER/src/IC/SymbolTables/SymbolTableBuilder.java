@@ -177,9 +177,9 @@ public class SymbolTableBuilder implements Visitor {
 		}
 
 		/* call visitor on fields and methods */
-//		for (Field field : icClass.getFields()) {
-//			field.accept(this);
-//		}
+		for (Field field : icClass.getFields()) {
+			field.setenclosingScope(icClass.getenclosingScope());
+		}
 		for (Method method : icClass.getMethods()) {
 			method.accept(this);
 		}
@@ -197,6 +197,7 @@ public class SymbolTableBuilder implements Visitor {
 		String name;
 		for (Formal formal : method.getFormals()){
 			name = formal.getName();
+			formal.setenclosingScope(method.getenclosingScope());
 			method.getenclosingScope().addEntry(name,new Symbol(name, formal.getEnclosingType(), Kind.FORMAL),formal.getLine());
 		}
 		for (Statement statement : method.getStatements()){
@@ -358,6 +359,7 @@ public class SymbolTableBuilder implements Visitor {
 			SymbolTable enclosingScope = location.getenclosingScope().getVariableScope(location.getName());
 			if (enclosingScope==null)
 				throw new SemanticError("Variable "+location.getName()+" has been used before being declared.",location.getLine());
+			location.setActualST(location.getenclosingScope());
 			location.setenclosingScope(enclosingScope);
 		}
 		return null;

@@ -1,7 +1,6 @@
 package IC;
 
 import java.io.FileReader;
-
 import IC.AST.ICClass;
 import IC.AST.PrettyPrinter;
 import IC.AST.Program;
@@ -90,28 +89,32 @@ public class Compiler {
 			}
 		}
 		
+		try {
+			TypeTableBuilderVisitor t = new TypeTableBuilderVisitor();
+			t.visit(ICRoot);
+			
+			Visitor s = new SymbolTableBuilder(pathTOic);
+			s.visit(ICRoot);
+
+			TypeCheckVisitor tc = new TypeCheckVisitor();
+			ICRoot.accept(tc);	
+			
+		} catch (RuntimeException exp) {
+			System.err.println(exp.getMessage());
+			return;
+		}
+		
 		if (print_ast) {
 			/* true - prints the tree with tabs
 			 * false - prints the tree without tabs */
 			PrettyPrinter printer = new PrettyPrinter(pathTOic, true);
-			System.out.println(ICRoot.accept(printer));
+			System.out.println(ICRoot.accept(printer)+"\n");//print the AST
+			
+			SymbolTablePrint pr = new SymbolTablePrint(ICRoot);
+			pr.printSymbolTable();//print the Symbol Table
+			
+			System.out.println(TypeTable.getString(pathTOic));//print the Type Table
 		}
-		
-		try {
-			TypeTableBuilderVisitor t = new TypeTableBuilderVisitor();
-			t.visit(ICRoot);
-			System.out.println(TypeTable.getString(pathTOic));
-		} catch (RuntimeException exp) {
-			System.err.println(exp.getMessage());
-		}
-
-		Visitor s = new SymbolTableBuilder(pathTOic);
-		s.visit(ICRoot);
-
-		SymbolTablePrint pr = new SymbolTablePrint(ICRoot);
-		pr.printSymbolTable();
-
-		TypeCheckVisitor tc = new TypeCheckVisitor();
-		ICRoot.accept(tc);		
+	
 	}
 }
