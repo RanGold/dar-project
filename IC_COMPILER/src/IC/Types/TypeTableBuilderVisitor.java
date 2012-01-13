@@ -155,9 +155,14 @@ public class TypeTableBuilderVisitor implements Visitor {
 
 	@Override
 	public Object visit(Return returnStatement) {
-		returnStatement.getValue().accept(this);
-		returnStatement.setEnclosingType(returnStatement.getValue().getEnclosingType());
-		return returnStatement.getEnclosingType(); 
+		if (returnStatement.hasValue()) {
+			returnStatement.getValue().accept(this);
+			returnStatement.setEnclosingType(returnStatement.getValue().getEnclosingType());
+		} else {
+			returnStatement.setEnclosingType(TypeTable.voidType);
+		}
+		
+		return returnStatement.getEnclosingType();
 	}
 
 	@Override

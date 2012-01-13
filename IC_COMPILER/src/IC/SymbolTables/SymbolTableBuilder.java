@@ -273,8 +273,10 @@ public class SymbolTableBuilder implements Visitor {
 
 	@Override
 	public Object visit(Return returnStatement) {
-		returnStatement.getValue().setenclosingScope(returnStatement.getenclosingScope());
-		returnStatement.getValue().accept(this);
+		if (returnStatement.hasValue()) {
+			returnStatement.getValue().setenclosingScope(returnStatement.getenclosingScope());
+			returnStatement.getValue().accept(this);
+		}
 		return null;
 	}
 
@@ -337,7 +339,7 @@ public class SymbolTableBuilder implements Visitor {
 		String name = localVariable.getName();
 		
 		Symbol varSym = new Symbol(name, localVariable.getEnclosingType(),
-				Kind.VAR, localVariable.hasInitValue());
+				Kind.VAR);
 		// add variable to symbol table
 		localVariable.getenclosingScope().addEntry(name, varSym,
 				localVariable.getLine());

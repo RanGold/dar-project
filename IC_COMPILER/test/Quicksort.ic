@@ -96,7 +96,8 @@ class Quicksort {
 }
 
 class F extends Quicksort {
-	void foo() {
+	Quicksort qs;
+	int[] foo() {
 		int x;
 		a = new int[4+x];
 		Quicksort f = new F();
@@ -106,5 +107,7 @@ class F extends Quicksort {
 		this.quicksort(1 , 4);
 		f.over(new F(), new F());
 		overs(new F(), new F());
+		this.qs = new F();
+		return f.a;
 	}
 }
