@@ -322,7 +322,15 @@ public class TypeCheckVisitor implements Visitor {
 		
 		if (methodSym == null) {
 			throw new SemanticError("Method " + call.getName() + " doesn't exist", call.getLine());
-		} else if (methodSym.getKind() != Kind.VIRTUAL_METHOD // TODO: check this
+		} 
+		
+		//if call is internal it can be a static call
+		if (!call.isExternal() && inStaticMethod && methodSym.getKind() != Kind.STATIC_METHOD){
+			throw new SemanticError("identifier " + call.getName() + " is a non static call inside a static method", call.getLine());
+		}
+		
+		
+		if (methodSym.getKind() != Kind.VIRTUAL_METHOD // TODO: check this
 				&& (call.isExternal() || methodSym.getKind() != Kind.STATIC_METHOD)) {
 			throw new SemanticError("identifier " + call.getName() + " isn't a valid call", call.getLine());
 		} else {
