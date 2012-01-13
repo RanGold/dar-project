@@ -98,17 +98,22 @@ class Quicksort {
 class F extends Quicksort {
 	Quicksort qs;
 	int[] foo() {
-		int x = 1 + 7;
-		a = new int[4+x];
+		int x;
+		int y = x;
+		a = new int[4+y];
 		Quicksort f = new F();
 		f.a = new int[5];
+		foo()[5] = x;
 		string s = null;
 		this.a[3] = 3;
-		this.quicksort(1 , 4);
+		if (false) {
+			x = 4;
+		}
+		this.quicksort(x , 4);
 		f.over(new F(), new F());
 		overs(new F(), new F());
 		this.qs = new F();
-		string ss = "fdsdf" + null;
+		string ss = "fdsdf" + "ads";
 		return f.a;
 	}
 }
