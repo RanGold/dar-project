@@ -199,7 +199,7 @@ public class TypeCheckVisitor implements Visitor {
 		// check initial value of local variable
 		if (localVariable.hasInitValue()) {
 			Type initValueType = (Type) localVariable.getInitValue().accept(this);
-
+			
 			// check initial value type is sub type of local variable
 			Type localVariableType = localVariable.getenclosingScope()
 					.getEntry(localVariable.getName()).getType();
@@ -226,7 +226,9 @@ public class TypeCheckVisitor implements Visitor {
 				throw new SemanticError(location.getName() + 
 						" is a field and cannot be used in a static function" , location.getLine());
 			}
-			return symb.getType();
+			Type t = symb.getType();
+			location.setEnclosingType(t);
+			return t;
 		}else{
 			Type locType = (Type)location.getLocation().accept(this);
 
@@ -244,7 +246,9 @@ public class TypeCheckVisitor implements Visitor {
 			} else if (varSym.getKind() != Kind.FIELD) {
 				throw new SemanticError("There is not field " + location.getName() + " in class " + cls.getName(), location.getLine());
 			} else {
-				return varSym.getType();
+				Type t = varSym.getType();
+				location.setEnclosingType(t);
+				return t;
 			}
 		}
 	}
@@ -263,7 +267,9 @@ public class TypeCheckVisitor implements Visitor {
 		}
 		
 		//return the type of an array element
-		return ((ArrayType)arrType).getElementType();
+		Type t = ((ArrayType)arrType).getElementType();
+		location.setEnclosingType(t);
+		return t;
 	}
 
 	private Object checkCallArguments(Call call, Symbol methodSym) {
@@ -298,7 +304,9 @@ public class TypeCheckVisitor implements Visitor {
 			} else if (methodSym.getKind() != Kind.STATIC_METHOD) {
 				throw new SemanticError("There is not static method " + call.getName() + " in class " + call.getClassName(), call.getLine());
 			} else {
-				return checkCallArguments(call, methodSym);
+				Type t = (Type) checkCallArguments(call, methodSym);
+				call.setEnclosingType(t);
+				return t;
 			}
 		}
 	}
@@ -333,7 +341,9 @@ public class TypeCheckVisitor implements Visitor {
 				&& (call.isExternal() || methodSym.getKind() != Kind.STATIC_METHOD)) {
 			throw new SemanticError("identifier " + call.getName() + " isn't a valid call", call.getLine());
 		} else {
-			return checkCallArguments(call, methodSym);
+			Type t = (Type) checkCallArguments(call, methodSym);
+			call.setEnclosingType(t);
+			return t;
 		}
 		
 	}
@@ -342,13 +352,17 @@ public class TypeCheckVisitor implements Visitor {
 		if (inStaticMethod) {
 			throw new SemanticError("this expression cannot appear within a static method", thisExpression.getLine());
 		}
-		return thisExpression.getenclosingScope().getEntry("this").getType();
+		
+		Type t = thisExpression.getenclosingScope().getEntry("this").getType();
+		thisExpression.setEnclosingType(t);
+		return t;
 	}
 
 	public Object visit(NewClass newClass) {
 		Type newClasstype = TypeTable.getClassType(newClass);
 		if (newClasstype == TypeTable.nullType) 
 			throw new SemanticError("Not a valid class type name - " + newClass.getName(), newClass.getLine());
+		newClass.setEnclosingType(newClasstype);
 		return newClasstype;
 	}
 
@@ -361,7 +375,9 @@ public class TypeCheckVisitor implements Visitor {
 		}
 		
 		//return the array type
-		return newArray.getEnclosingType();
+		Type t = newArray.getEnclosingType();
+		newArray.setEnclosingType(t);
+		return t;
 	}
 
 	public Object visit(Length length) {
@@ -381,8 +397,6 @@ public class TypeCheckVisitor implements Visitor {
 	public Object visit(MathBinaryOp binaryOp) {
 		Type binaryOpType1 = (Type) binaryOp.getFirstOperand().accept(this);
 		Type binaryOpType2 = (Type) binaryOp.getSecondOperand().accept(this);
-		binaryOp.getFirstOperand().setEnclosingType(binaryOpType1);
-		binaryOp.getSecondOperand().setEnclosingType(binaryOpType2);
 		if (binaryOpType1 == null || binaryOpType2 == null) return null;
 		//if binaryOp is '+' types are both int or both string 
 		if (binaryOp.getOperator().equals(BinaryOps.PLUS)){
@@ -406,9 +420,7 @@ public class TypeCheckVisitor implements Visitor {
 
 	public Object visit(LogicalBinaryOp binaryOp) {
 		Type binaryOpType1 = (Type) binaryOp.getFirstOperand().accept(this);
-		Type binaryOpType2 = (Type) binaryOp.getSecondOperand().accept(this);
-		binaryOp.getFirstOperand().setEnclosingType(binaryOpType1);
-		binaryOp.getSecondOperand().setEnclosingType(binaryOpType2);		
+		Type binaryOpType2 = (Type) binaryOp.getSecondOperand().accept(this);	
 
 		if (!binaryOpType1.subtypeof(binaryOpType2)&& !binaryOpType2.subtypeof(binaryOpType1)) {
 			// if non of the operands is a sub type of the other
@@ -455,7 +467,7 @@ public class TypeCheckVisitor implements Visitor {
 
 	public Object visit(MathUnaryOp unaryOp) {
         Type unaryOpType = (Type) unaryOp.getOperand().accept(this);
-        unaryOp.getOperand().setEnclosingType(unaryOpType);
+       
         if (unaryOpType == null) return null;
         if (!unaryOpType.subtypeof(TypeTable.intType)){                                
         	throw new SemanticError("Mathematical unary operation on a non-integer type",unaryOp.getLine());
@@ -466,7 +478,7 @@ public class TypeCheckVisitor implements Visitor {
 
 	public Object visit(LogicalUnaryOp unaryOp) {
         Type unaryOpType = (Type) unaryOp.getOperand().accept(this);
-        unaryOp.getOperand().setEnclosingType(unaryOpType);
+
         if (!unaryOpType.subtypeof(TypeTable.boolType)){                                
         	throw new SemanticError("Logical unary operation on a non-boolean type",unaryOp.getLine());
         }
