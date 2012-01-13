@@ -89,13 +89,6 @@ public class SymbolTableBuilder implements Visitor {
 			//throw new SemanticError("The type of the input parameter of the main method must be \"string[]\"",method.getLine());
 			return;
 		}
-		//TODO delete lines below?
-//		//check name of input parameter
-//		if (!method.getFormals().get(0).getName().equals("args")) {
-//			// throw new
-//			// SemanticError("Input parameter in main method must be named \"args\"",method.getLine());
-//			return;
-//		}
 		//check return parameter
 		if (!method.getType().getEnclosingType().subtypeof(TypeTable.voidType)){
 			//throw new SemanticError("main method must return void",method.getLine());
