@@ -12,16 +12,6 @@
 //    void exit(int n) {}
 //}
 
-class F {
-void foo() {
-int x;
-int[] a = new int[4+x];
-Quicksort f;
-f.a = new int[5];
-string s = null;
-}
-}
-
 class Quicksort {
     int[] a;
 
@@ -45,6 +35,12 @@ class Quicksort {
     }
 
     return j;
+    }
+    
+    void over(Quicksort q, F f) {
+    }
+    
+    static void overs(Quicksort q, F f) {
     }
 
     void quicksort(int low, int high) {
@@ -97,4 +93,18 @@ class Quicksort {
     s.quicksort(0, (n-1));
     s.printArray();
     }
+}
+
+class F extends Quicksort {
+	void foo() {
+		int x;
+		a = new int[4+x];
+		Quicksort f = new F();
+		f.a = new int[5];
+		string s = null;
+		this.a[3] = 3;
+		this.quicksort(1 , 4);
+		f.over(new F(), new F());
+		overs(new F(), new F());
+	}
 }
