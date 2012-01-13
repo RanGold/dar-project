@@ -17,8 +17,6 @@ public class PrettyPrinter implements Visitor {
 	private String ICFilePath;
 	
 	private boolean doIndents;
-	
-	private static int arraySize;
 
 	/**
 	 * Constructs a new pretty printer visitor.
@@ -335,27 +333,18 @@ public class PrettyPrinter implements Visitor {
 		}
 		return output.toString();
 	}
-
-	private String getArrayName(Expression location){
-		if (!(location instanceof VariableLocation))
-			return getArrayName(((ArrayLocation) location).getArray());
-		return ((VariableLocation)location).getName();
-	}
 	
 	public Object visit(ArrayLocation location) {
-		arraySize++;
 		StringBuffer output = new StringBuffer();
 
 		indent(output, location);
 		output.append("Reference to array");
-		String type = location.getenclosingScope().getEntryRecursive(getArrayName(location.getArray())).getType().toString();
-		output.append(", Type: "+type.substring(0, type.length()-2*arraySize));
+		output.append(", Type: "+location.getEnclosingType());
 		output.append(addSymbolTableEntry(location.getenclosingScope()));
 		depth += 2;
 		output.append(location.getArray().accept(this));
 		output.append(location.getIndex().accept(this));
 		depth -= 2;
-		arraySize--;
 		return output.toString();
 	}
 
