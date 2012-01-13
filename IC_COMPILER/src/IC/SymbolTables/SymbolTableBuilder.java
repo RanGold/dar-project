@@ -351,6 +351,7 @@ public class SymbolTableBuilder implements Visitor {
 
 	@Override
 	public Object visit(VariableLocation location) {
+		location.setActualST(location.getenclosingScope());
 		if (location.isExternal()) {
 			location.getLocation().setenclosingScope(location.getenclosingScope());
 			location.getLocation().accept(this);
@@ -359,7 +360,6 @@ public class SymbolTableBuilder implements Visitor {
 			SymbolTable enclosingScope = location.getenclosingScope().getVariableScope(location.getName());
 			if (enclosingScope==null)
 				throw new SemanticError("Variable "+location.getName()+" has been used before being declared.",location.getLine());
-			location.setActualST(location.getenclosingScope());
 			location.setenclosingScope(enclosingScope);
 		}
 		return null;
