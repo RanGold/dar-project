@@ -235,7 +235,7 @@ public class TypeCheckVisitor implements Visitor {
 			}
 
 			ICClass cls = ((ClassType)locType).getICClass();
-			Symbol varSym = cls.getenclosingScope().getEntry(location.getName());
+			Symbol varSym = cls.getenclosingScope().getEntryRecursive(location.getName());
 			//location is external
 			if (varSym == null) {
 				throw new SemanticError("Identifier " + location.getName()
@@ -275,7 +275,7 @@ public class TypeCheckVisitor implements Visitor {
 		for (int i = 0; i < methodType.getArguments().size(); i++) {
 			Type curArgType = (Type)call.getArguments().get(i).accept(this); 
 			if (!curArgType.subtypeof(methodType.getArguments().get(i))) {
-				throw new SemanticError("Argument number " + i + " is of invalid type, " +
+				throw new SemanticError("Argument number " + (i + 1) + " is of invalid type, " +
 						"for method " + call.getName(), call.getLine());
 			}
 		}
@@ -316,7 +316,7 @@ public class TypeCheckVisitor implements Visitor {
 			}
 
 			methodSym = ((ClassType) locType).getICClass().getenclosingScope()
-					.getEntry(call.getName());
+					.getEntryRecursive(call.getName());
 		}
 		
 		if (methodSym == null) {
