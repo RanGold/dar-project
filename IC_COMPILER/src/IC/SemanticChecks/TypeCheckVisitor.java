@@ -259,7 +259,7 @@ public class TypeCheckVisitor implements Visitor {
 		//check array is an array type
 		Type arrType = (Type) location.getArray().accept(this);
 		if (!(arrType instanceof ArrayType)) {
-			throw new SemanticError("Wring usage of an array location", location.getLine());
+			throw new SemanticError("Wrong usage of an array location", location.getLine());
 		}
 		
 		//return the type of an array element
