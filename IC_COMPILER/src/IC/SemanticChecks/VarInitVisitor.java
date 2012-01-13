@@ -50,8 +50,8 @@ import IC.SymbolTables.Symbol;
 public class VarInitVisitor implements Visitor {
 	
 	private int inLoop = 0;
-	private HashMap<If, LinkedList<VarRec>> ifAssignments = new HashMap<If, LinkedList<VarRec>>();;
-	private Map<If, Boolean> ifState = new HashMap<If, Boolean>();;
+	private HashMap<If, LinkedList<VarRec>> ifAssignments = new HashMap<If, LinkedList<VarRec>>();
+	private Map<If, Boolean> ifState = new HashMap<If, Boolean>();
 	private Stack<If> ifStack = new Stack<If>();
 	private If curIf;
 	
