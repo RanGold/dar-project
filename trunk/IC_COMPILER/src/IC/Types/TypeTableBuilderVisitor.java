@@ -273,8 +273,8 @@ public class TypeTableBuilderVisitor implements Visitor {
 
 	@Override
 	public Object visit(MathBinaryOp binaryOp) {
-		binaryOp.getFirstOperand().accept(this);
-		binaryOp.getSecondOperand().accept(this);
+		binaryOp.getFirstOperand().setEnclosingType((Type)binaryOp.getFirstOperand().accept(this));
+		binaryOp.getSecondOperand().setEnclosingType((Type)binaryOp.getSecondOperand().accept(this));
 		return null;
 	}
 

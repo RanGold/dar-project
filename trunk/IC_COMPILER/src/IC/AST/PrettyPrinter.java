@@ -17,6 +17,8 @@ public class PrettyPrinter implements Visitor {
 	private String ICFilePath;
 	
 	private boolean doIndents;
+	
+	private static int arraySize;
 
 	/**
 	 * Constructs a new pretty printer visitor.
@@ -59,7 +61,14 @@ public class PrettyPrinter implements Visitor {
 		st = st.getVariableScope(name);
 		String output = ", Type: ";
 		Symbol symbol = st.getEntry(name);
-		output += symbol.getType().toString() + ", Symbol table: " + stmtBlockLocation(st);//TODO: path -> global, statement block
+		output += symbol.getType().toString() + ", Symbol table: " + stmtBlockLocation(st);
+		return output;
+	}
+	
+	private String addSymbolTableEntryNonRecursive(SymbolTable st,String name){
+		String output = ", Type: ";
+		Symbol symbol = st.getEntryRecursive(name);
+		output += symbol.getType().toString() + ", Symbol table: " + stmtBlockLocation(st);
 		return output;
 	}
 	
@@ -317,7 +326,8 @@ public class PrettyPrinter implements Visitor {
 		output.append("Reference to variable: " + location.getName());
 		if (location.isExternal())
 			output.append(", in external scope");
-		output.append(addSymbolTableEntry(location.getActualST(),location.getName()));//TODO: check what tovi answers
+		output.append(", Type: "+location.getenclosingScope().getEntryRecursive(location.getName()).getType());
+		output.append(addSymbolTableEntry(location.getActualST()));
 		if (location.isExternal()) {
 			++depth;
 			output.append(location.getLocation().accept(this));
@@ -326,15 +336,26 @@ public class PrettyPrinter implements Visitor {
 		return output.toString();
 	}
 
+	private String getArrayName(Expression location){
+		if (!(location instanceof VariableLocation))
+			return getArrayName(((ArrayLocation) location).getArray());
+		return ((VariableLocation)location).getName();
+	}
+	
 	public Object visit(ArrayLocation location) {
+		arraySize++;
 		StringBuffer output = new StringBuffer();
 
 		indent(output, location);
 		output.append("Reference to array");
+		String type = location.getenclosingScope().getEntryRecursive(getArrayName(location.getArray())).getType().toString();
+		output.append(", Type: "+type.substring(0, type.length()-2*arraySize));
+		output.append(addSymbolTableEntry(location.getenclosingScope()));
 		depth += 2;
 		output.append(location.getArray().accept(this));
 		output.append(location.getIndex().accept(this));
 		depth -= 2;
+		arraySize--;
 		return output.toString();
 	}
 
@@ -344,6 +365,8 @@ public class PrettyPrinter implements Visitor {
 		indent(output, call);
 		output.append("Call to static method: " + call.getName()
 				+ ", in class " + call.getClassName());
+		output.append(", Type: void");
+		output.append(addSymbolTableEntry(call.getenclosingScope()));
 		depth += 2;
 		for (Expression argument : call.getArguments())
 			output.append(argument.accept(this));
@@ -353,11 +376,14 @@ public class PrettyPrinter implements Visitor {
 
 	public Object visit(VirtualCall call) {
 		StringBuffer output = new StringBuffer();
-
+		
 		indent(output, call);
 		output.append("Call to virtual method: " + call.getName());
 		if (call.isExternal())
 			output.append(", in external scope");
+		output.append(", Type: void");
+
+		output.append(addSymbolTableEntry(call.getenclosingScope()));
 		depth += 2;
 		if (call.isExternal())
 			output.append(call.getLocation().accept(this));
@@ -372,6 +398,7 @@ public class PrettyPrinter implements Visitor {
 
 		indent(output, thisExpression);
 		output.append("Reference to 'this' instance");
+		output.append(addSymbolTableEntry(thisExpression.getenclosingScope()));
 		return output.toString();
 	}
 
@@ -380,6 +407,7 @@ public class PrettyPrinter implements Visitor {
 
 		indent(output, newClass);
 		output.append("Instantiation of class: " + newClass.getName());
+		output.append(addSymbolTableEntryNonRecursive(newClass.getenclosingScope(),newClass.getName()));
 		return output.toString();
 	}
 
@@ -388,6 +416,8 @@ public class PrettyPrinter implements Visitor {
 
 		indent(output, newArray);
 		output.append("Array allocation");
+		output.append(", Type: "+newArray.getEnclosingType());
+		output.append(addSymbolTableEntry(newArray.getenclosingScope()));
 		depth += 2;
 		output.append(newArray.getType().accept(this));
 		output.append(newArray.getSize().accept(this));
@@ -400,6 +430,7 @@ public class PrettyPrinter implements Visitor {
 
 		indent(output, length);
 		output.append("Reference to array length");
+		output.append(addSymbolTableEntry(length.getenclosingScope()));
 		++depth;
 		output.append(length.getArray().accept(this));
 		--depth;
@@ -412,6 +443,8 @@ public class PrettyPrinter implements Visitor {
 		indent(output, binaryOp);
 		output.append("Mathematical binary operation: "
 				+ binaryOp.getOperator().getDescription());
+		output.append(", Type: "+binaryOp.getFirstOperand().getEnclosingType());
+		output.append(addSymbolTableEntry(binaryOp.getenclosingScope()));
 		depth += 2;
 		output.append(binaryOp.getFirstOperand().accept(this));
 		output.append(binaryOp.getSecondOperand().accept(this));
