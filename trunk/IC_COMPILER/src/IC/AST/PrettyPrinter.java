@@ -443,7 +443,7 @@ public class PrettyPrinter implements Visitor {
 		indent(output, binaryOp);
 		output.append("Mathematical binary operation: "
 				+ binaryOp.getOperator().getDescription());
-		output.append(", Type: "+binaryOp.getFirstOperand().getEnclosingType());
+		output.append(", Type: "+binaryOp.getEnclosingType());
 		output.append(addSymbolTableEntry(binaryOp.getenclosingScope()));
 		depth += 2;
 		output.append(binaryOp.getFirstOperand().accept(this));
@@ -458,6 +458,8 @@ public class PrettyPrinter implements Visitor {
 		indent(output, binaryOp);
 		output.append("Logical binary operation: "
 				+ binaryOp.getOperator().getDescription());
+		output.append(", Type: "+binaryOp.getEnclosingType());
+		output.append(addSymbolTableEntry(binaryOp.getenclosingScope()));
 		depth += 2;
 		output.append(binaryOp.getFirstOperand().accept(this));
 		output.append(binaryOp.getSecondOperand().accept(this));
@@ -471,6 +473,8 @@ public class PrettyPrinter implements Visitor {
 		indent(output, unaryOp);
 		output.append("Mathematical unary operation: "
 				+ unaryOp.getOperator().getDescription());
+		output.append(", Type: "+unaryOp.getEnclosingType());
+		output.append(addSymbolTableEntry(unaryOp.getenclosingScope()));
 		++depth;
 		output.append(unaryOp.getOperand().accept(this));
 		--depth;
@@ -483,6 +487,8 @@ public class PrettyPrinter implements Visitor {
 		indent(output, unaryOp);
 		output.append("Logical unary operation: "
 				+ unaryOp.getOperator().getDescription());
+		output.append(", Type: "+unaryOp.getEnclosingType());
+		output.append(addSymbolTableEntry(unaryOp.getenclosingScope()));
 		++depth;
 		output.append(unaryOp.getOperand().accept(this));
 		--depth;
@@ -495,6 +501,8 @@ public class PrettyPrinter implements Visitor {
 		indent(output, literal);
 		output.append(literal.getType().getDescription() + ": "
 				+ literal.getType().toFormattedString(literal.getValue()));
+		output.append(", Type: "+literal.getEnclosingType());
+		output.append(addSymbolTableEntry(literal.getenclosingScope()));
 		return output.toString();
 	}
 
@@ -503,6 +511,8 @@ public class PrettyPrinter implements Visitor {
 
 		indent(output, expressionBlock);
 		output.append("Parenthesized expression");
+		output.append(", Type: "+expressionBlock.getEnclosingType());
+		output.append(addSymbolTableEntry(expressionBlock.getenclosingScope()));
 		++depth;
 		output.append(expressionBlock.getExpression().accept(this));
 		--depth;
