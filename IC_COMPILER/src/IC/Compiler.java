@@ -73,7 +73,7 @@ public class Compiler {
 		try {
 			txtFile = new FileReader(pathTOlibic);
 		} catch (FileNotFoundException e1) {
-			System.err.println("Missing library file or path to file is incorrect");
+			System.err.println(e1.getMessage());
 			return;
 		}
 		
