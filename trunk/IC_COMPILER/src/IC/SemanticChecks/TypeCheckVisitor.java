@@ -373,6 +373,7 @@ public class TypeCheckVisitor implements Visitor {
 		}
 		
 		//return int
+		length.setEnclosingType(TypeTable.intType);
 		return TypeTable.intType;
 	}
 
@@ -386,6 +387,7 @@ public class TypeCheckVisitor implements Visitor {
 		//if binaryOp is '+' types are both int or both string 
 		if (binaryOp.getOperator().equals(BinaryOps.PLUS)){
 			if ((binaryOpType1 == TypeTable.stringType) && (binaryOpType2 == TypeTable.stringType)){
+				binaryOp.setEnclosingType(TypeTable.stringType);
 				return TypeTable.stringType;
 			}else{
 				if (!binaryOpType1.subtypeof(TypeTable.intType) || !binaryOpType2.subtypeof(TypeTable.intType)){
@@ -398,13 +400,15 @@ public class TypeCheckVisitor implements Visitor {
 		if (!binaryOpType1.subtypeof(TypeTable.intType) || !binaryOpType2.subtypeof(TypeTable.intType)){
 			throw new SemanticError("Mathematical binary operation on a non-int values", binaryOp.getLine());			
 		}
-
+		binaryOp.setEnclosingType(TypeTable.intType);
 		return TypeTable.intType;
 	}
 
 	public Object visit(LogicalBinaryOp binaryOp) {
 		Type binaryOpType1 = (Type) binaryOp.getFirstOperand().accept(this);
 		Type binaryOpType2 = (Type) binaryOp.getSecondOperand().accept(this);
+		binaryOp.getFirstOperand().setEnclosingType(binaryOpType1);
+		binaryOp.getSecondOperand().setEnclosingType(binaryOpType2);		
 
 		if (!binaryOpType1.subtypeof(binaryOpType2)&& !binaryOpType2.subtypeof(binaryOpType1)) {
 			// if non of the operands is a sub type of the other
@@ -445,23 +449,28 @@ public class TypeCheckVisitor implements Visitor {
 				throw new SemanticError("Comparing non int values",binaryOp.getLine());
 			}
 		}
+		binaryOp.setEnclosingType(TypeTable.boolType);
 		return TypeTable.boolType;
 	}
 
 	public Object visit(MathUnaryOp unaryOp) {
         Type unaryOpType = (Type) unaryOp.getOperand().accept(this);
+        unaryOp.getOperand().setEnclosingType(unaryOpType);
         if (unaryOpType == null) return null;
         if (!unaryOpType.subtypeof(TypeTable.intType)){                                
         	throw new SemanticError("Mathematical unary operation on a non-integer type",unaryOp.getLine());
         }
+        unaryOp.setEnclosingType(TypeTable.intType);
         return TypeTable.intType;
 	}
 
 	public Object visit(LogicalUnaryOp unaryOp) {
         Type unaryOpType = (Type) unaryOp.getOperand().accept(this);
+        unaryOp.getOperand().setEnclosingType(unaryOpType);
         if (!unaryOpType.subtypeof(TypeTable.boolType)){                                
         	throw new SemanticError("Logical unary operation on a non-boolean type",unaryOp.getLine());
         }
+        unaryOp.setEnclosingType(TypeTable.boolType);
         return TypeTable.boolType;
 	}
 
@@ -473,7 +482,9 @@ public class TypeCheckVisitor implements Visitor {
 
 
 	public Object visit(ExpressionBlock expressionBlock) {
-		return expressionBlock.getExpression().accept(this);
+		Type t = (Type) expressionBlock.getExpression().accept(this);
+		expressionBlock.setEnclosingType(t);
+		return t;
 	}
 
 }
