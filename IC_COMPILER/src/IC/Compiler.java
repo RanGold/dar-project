@@ -1,5 +1,6 @@
 package IC;
 
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import IC.AST.ICClass;
 import IC.AST.PrettyPrinter;
@@ -18,11 +19,11 @@ import IC.Types.TypeTableBuilderVisitor;
 public class Compiler {
 
 	public static void main(String[] args) {
-		boolean parse_libic = false, print_ast = false, seen_ICpath = false;
-		String pathTOlibic = null, pathTOic = null;
+		boolean parse_libic = false, print_ast = false, seen_ICpath = false, dump_symtab = false;
+		String pathTOlibic = "libic.sig", pathTOic = null;
 
-		if ((args.length == 0) || (args.length > 3)) {
-			System.err.println("Usage: java IC.Compiler <file.ic> [-L</path/to/libic.sig>] [-print-ast]");
+		if ((args.length == 0) || (args.length > 4)) {
+			System.err.println("Usage: java IC.Compiler <file.ic> [-L</path/to/libic.sig>] [-print-ast] [-dump-symtab]");
 			return;
 		}
 
@@ -47,9 +48,15 @@ public class Compiler {
 					return;
 				}
 				print_ast = true;
+			} else if (args[i].equals("-dump-symtab")) {
+				if (dump_symtab) {
+					System.err.println("can't use the -dump-symtab flag more than once");
+					return;
+				}
+				dump_symtab = true;
 			} else {
 				if (seen_ICpath) {
-					System.err.println("Usage: java IC.Compiler <file.ic> [-L</path/to/libic.sig>] [-print-ast]");
+					System.err.println("Usage: java IC.Compiler <file.ic> [-L</path/to/libic.sig>] [-print-ast] [-dump-symtab]");
 					return;
 				}
 				seen_ICpath = true;
@@ -61,12 +68,20 @@ public class Compiler {
 			System.err.println("Missing path to IC file");
 			return;
 		}
-
+		
+		FileReader txtFile = null;
+		try {
+			txtFile = new FileReader(pathTOlibic);
+		} catch (FileNotFoundException e1) {
+			System.err.println("Missing library file or path to file is incorrect");
+			return;
+		}
+		
 		// Parse the IC file
 		Program ICRoot = null;
 		try {
-			FileReader txtFile = new FileReader(pathTOic);
-			Lexer scanner = new Lexer(txtFile);
+			FileReader txtFile2 = new FileReader(pathTOic);
+			Lexer scanner = new Lexer(txtFile2);
 			Parser parser = new Parser(scanner);
 			ICRoot = (Program) parser.parse().value;
 			System.out.println("Parsed " + pathTOic + " successfully!");
@@ -76,18 +91,16 @@ public class Compiler {
 		}
 
 		// If specified, parse the libic file
-		if (parse_libic) {
-			try {
-				FileReader txtFile = new FileReader(pathTOlibic);
-				Lexer scanner = new Lexer(txtFile);
-				LibraryParser parser = new LibraryParser(scanner);
-				ICClass LibicRoot = (ICClass) parser.parse().value;
-				ICRoot.getClasses().add(0, LibicRoot);
-				System.out.println("Parsed " + pathTOlibic + " successfully!");
-			} catch (Exception e) {
-				System.err.println(e.getMessage());
-				return;
-			}
+		try {
+			//FileReader txtFile = new FileReader(pathTOlibic);
+			Lexer scanner = new Lexer(txtFile);
+			LibraryParser parser = new LibraryParser(scanner);
+			ICClass LibicRoot = (ICClass) parser.parse().value;
+			ICRoot.getClasses().add(0, LibicRoot);
+			System.out.println("Parsed " + pathTOlibic + " successfully!");
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+			return;
 		}
 		
 		try {
@@ -113,7 +126,8 @@ public class Compiler {
 			 * false - prints the tree without tabs */
 			PrettyPrinter printer = new PrettyPrinter(pathTOic, true);
 			System.out.println(ICRoot.accept(printer)+"\n");//print the AST
-			
+		}
+		if (dump_symtab){	
 			SymbolTablePrint pr = new SymbolTablePrint(ICRoot);
 			pr.printSymbolTable();//print the Symbol Table
 			
