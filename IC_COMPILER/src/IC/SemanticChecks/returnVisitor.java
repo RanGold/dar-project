@@ -17,8 +17,7 @@ public class returnVisitor implements Visitor {
 
 	public Object visit(ICClass icClass) {
 		for (Method method : icClass.getMethods()) {
-			if (!(Boolean)method.accept(this))
-				return false;
+			method.accept(this);
 		}
 		return true;
 	}
@@ -39,7 +38,7 @@ public class returnVisitor implements Visitor {
 				return true;
 		}
 		System.err.println("Warning: Method " + method.getName() +" in line "+ method.getLine() +
-				" does not have a return statement at each path");
+				" might not have a return statement at each path");
 		return false;
 	}
 	
@@ -52,7 +51,7 @@ public class returnVisitor implements Visitor {
 	}
 
 	public Object visit(LibraryMethod method) {
-		return methodVisit(method);
+		return true;
 	}
 
 	public Object visit(Formal formal) {

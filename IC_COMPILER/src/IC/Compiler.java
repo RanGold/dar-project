@@ -11,6 +11,7 @@ import IC.Parser.LibraryParser;
 import IC.Parser.Parser;
 import IC.SemanticChecks.TypeCheckVisitor;
 import IC.SemanticChecks.VarInitVisitor;
+import IC.SemanticChecks.returnVisitor;
 import IC.SymbolTables.SymbolTableBuilder;
 import IC.SymbolTables.SymbolTablePrint;
 import IC.Types.TypeTable;
@@ -115,6 +116,9 @@ public class Compiler {
 			
 			VarInitVisitor vi = new VarInitVisitor();
 			ICRoot.accept(vi);
+			
+			returnVisitor rv = new returnVisitor();
+			ICRoot.accept(rv);
 			
 		} catch (RuntimeException exp) {
 			System.err.println(exp.getMessage());
