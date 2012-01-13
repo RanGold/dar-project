@@ -100,14 +100,27 @@ class F extends Quicksort {
 	int[] foo() {
 		int x;
 		int y = x;
+		boolean b = true;
+		b = (b && !b) || !b;
 		a = new int[4+y];
 		Quicksort f = new F();
 		f.a = new int[5];
 		foo()[5] = x;
 		string s = null;
 		this.a[3] = 3;
+		
 		if (false) {
-			x = 4;
+			x = 2;
+		} else {
+			if (true) {
+				x = 3;
+			} else {
+				if (true) {
+					x = 5;
+				} else {
+					x = 3;
+				}
+			}
 		}
 		this.quicksort(x , 4);
 		f.over(new F(), new F());
