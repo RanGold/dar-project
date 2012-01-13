@@ -292,7 +292,7 @@ public class TypeCheckVisitor implements Visitor {
 			throw new SemanticError("Identifier " + call.getClassName() + " is not a class type", call.getLine());
 		} else {
 			ICClass classRef = ((ClassType)classSym.getType()).getICClass();
-			Symbol methodSym = classRef.getenclosingScope().getEntry(call.getName());
+			Symbol methodSym = classRef.getenclosingScope().getEntryRecursive(call.getName());
 			if (methodSym == null) {
 				throw new SemanticError("Identifier " + call.getName() + " doesn't exist in class " + call.getClassName(), call.getLine());
 			} else if (methodSym.getKind() != Kind.STATIC_METHOD) {
