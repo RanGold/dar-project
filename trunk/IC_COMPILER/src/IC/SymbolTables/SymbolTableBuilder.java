@@ -134,13 +134,13 @@ public class SymbolTableBuilder implements Visitor {
 					for (int i=0;i<methodTOoverride_type.getArguments().size();i++){
 						IC.Types.Type type1 = method_type.getArguments().get(i);
 						IC.Types.Type type2 = methodTOoverride_type.getArguments().get(i);
-						if (type1!=type2 && !type2.subtypeof(type1))
+						if (type1!=type2 && !type2.subtypeof(type1))//TODO: change here
 							throw new SemanticError("Overloading of methods is not supported",line);
 					}
 					//check that the return type is correctly overridden
 					IC.Types.Type type1 = method_type.getReturnVal();
 					IC.Types.Type type2 = methodTOoverride_type.getReturnVal();
-					if (type1!=type2 && !type1.subtypeof(type2))
+					if (type1!=type2 && !type1.subtypeof(type2))//TODO: change here
 						throw new SemanticError("Overloading of methods is not supported",line);
 				}
 			}
@@ -232,19 +232,16 @@ public class SymbolTableBuilder implements Visitor {
 
 	@Override
 	public Object visit(Formal formal) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Object visit(PrimitiveType type) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Object visit(UserType type) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -305,13 +302,11 @@ public class SymbolTableBuilder implements Visitor {
 
 	@Override
 	public Object visit(Break breakStatement) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Object visit(Continue continueStatement) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -399,13 +394,11 @@ public class SymbolTableBuilder implements Visitor {
 
 	@Override
 	public Object visit(This thisExpression) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Object visit(NewClass newClass) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -457,7 +450,6 @@ public class SymbolTableBuilder implements Visitor {
 
 	@Override
 	public Object visit(Literal literal) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
