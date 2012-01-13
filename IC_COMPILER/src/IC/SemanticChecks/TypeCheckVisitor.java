@@ -42,6 +42,7 @@ import IC.SymbolTables.Symbol;
 import IC.Types.ArrayType;
 import IC.Types.ClassType;
 import IC.Types.MethodType;
+import IC.Types.StringType;
 import IC.Types.Type;
 import IC.Types.TypeTable;
 
@@ -114,7 +115,7 @@ public class TypeCheckVisitor implements Visitor {
 		Type locationType  = (Type) assignment.getVariable().accept(this);
 		Type assignmentType = (Type) assignment.getAssignment().accept(this);
 		if (!assignmentType.subtypeof(locationType)){
-			throw new SemanticError("Type mismatch - can't assign "+ assignmentType+ 
+			throw new SemanticError("Type mismatch - can't assign "+ assignmentType + 
 									 " into " + locationType, assignment.getLine());
 		}				
 		return true;
@@ -375,7 +376,7 @@ public class TypeCheckVisitor implements Visitor {
 		if (binaryOpType1 == null || binaryOpType2 == null) return null;
 		//if binaryOp is '+' types are both int or both string 
 		if (binaryOp.getOperator().equals(BinaryOps.PLUS)){
-			if (binaryOpType1.subtypeof(TypeTable.stringType) && binaryOpType2.subtypeof(TypeTable.stringType)){
+			if ((binaryOpType1 instanceof StringType) && (binaryOpType1 instanceof StringType)){
 				return TypeTable.stringType;
 			}else{
 				if (!binaryOpType1.subtypeof(TypeTable.intType) || !binaryOpType2.subtypeof(TypeTable.intType)){
