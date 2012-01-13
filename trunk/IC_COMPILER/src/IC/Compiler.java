@@ -9,6 +9,7 @@ import IC.Parser.Lexer;
 import IC.Parser.LibraryParser;
 import IC.Parser.Parser;
 import IC.SemanticChecks.TypeCheckVisitor;
+import IC.SemanticChecks.VarInitVisitor;
 import IC.SymbolTables.SymbolTableBuilder;
 import IC.SymbolTables.SymbolTablePrint;
 import IC.Types.TypeTable;
@@ -97,7 +98,10 @@ public class Compiler {
 			s.visit(ICRoot);
 
 			TypeCheckVisitor tc = new TypeCheckVisitor();
-			ICRoot.accept(tc);	
+			ICRoot.accept(tc);
+			
+			VarInitVisitor vi = new VarInitVisitor();
+			ICRoot.accept(vi);
 			
 		} catch (RuntimeException exp) {
 			System.err.println(exp.getMessage());
@@ -115,6 +119,5 @@ public class Compiler {
 			
 			System.out.println(TypeTable.getString(pathTOic));//print the Type Table
 		}
-	
 	}
 }
