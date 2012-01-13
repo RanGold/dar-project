@@ -460,7 +460,7 @@ public class TypeCheckVisitor implements Visitor {
         	throw new SemanticError("Logical unary operation on a non-boolean type",unaryOp.getLine());
         }
         return TypeTable.boolType;
-}
+	}
 
 
 
