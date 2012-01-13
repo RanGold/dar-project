@@ -1,5 +1,9 @@
 package IC.AST;
 
+import IC.SymbolTables.Symbol;
+import IC.SymbolTables.SymbolTable;
+import IC.SymbolTables.SymbolTableTypes;
+
 /**
  * Pretty printing visitor - travels along the AST and prints info about each
  * node, in an easy-to-comprehend format.
@@ -39,6 +43,30 @@ public class PrettyPrinter implements Visitor {
 	private void indent(StringBuffer output) {
 		indent(output, null);
 	}
+	
+	private String stmtBlockLocation(SymbolTable st){
+		String output="";
+		if (st.getType().equals(SymbolTableTypes.StatementBlock))
+			output = "statement block in " + st.stmtBlockLocation();
+		else if (st.getType().equals(SymbolTableTypes.Global))
+			output = "Global";
+		else
+			output = st.getID();
+		return output;
+	}
+	
+	private String addSymbolTableEntry(SymbolTable st,String name){
+		st = st.getVariableScope(name);
+		String output = ", Type: ";
+		Symbol symbol = st.getEntry(name);
+		output += symbol.getType().toString() + ", Symbol table: " + stmtBlockLocation(st);//TODO: path -> global, statement block
+		return output;
+	}
+	
+	private String addSymbolTableEntry(SymbolTable st){
+		String output = ", Symbol table: " + stmtBlockLocation(st);
+		return output;
+	}
 
 	public Object visit(Program program) {
 		StringBuffer output = new StringBuffer();
@@ -57,6 +85,7 @@ public class PrettyPrinter implements Visitor {
 		output.append("Declaration of class: " + icClass.getName());
 		if (icClass.hasSuperClass())
 			output.append(", subclass of " + icClass.getSuperClassName());
+		output.append(addSymbolTableEntry(icClass.getenclosingScope(),icClass.getName()));
 		depth += 2;
 		for (Field field : icClass.getFields())
 			output.append(field.accept(this));
@@ -93,6 +122,7 @@ public class PrettyPrinter implements Visitor {
 
 		indent(output, field);
 		output.append("Declaration of field: " + field.getName());
+		output.append(addSymbolTableEntry(field.getenclosingScope(),field.getName()));
 		++depth;
 		output.append(field.getType().accept(this));
 		--depth;
@@ -104,6 +134,7 @@ public class PrettyPrinter implements Visitor {
 
 		indent(output, method);
 		output.append("Declaration of library method: " + method.getName());
+		output.append(addSymbolTableEntry(method.getenclosingScope(),method.getName()));
 		depth += 2;
 		output.append(method.getType().accept(this));
 		for (Formal formal : method.getFormals())
@@ -117,6 +148,7 @@ public class PrettyPrinter implements Visitor {
 
 		indent(output, formal);
 		output.append("Parameter: " + formal.getName());
+		output.append(addSymbolTableEntry(formal.getenclosingScope(),formal.getName()));
 		++depth;
 		output.append(formal.getType().accept(this));
 		--depth;
@@ -128,6 +160,7 @@ public class PrettyPrinter implements Visitor {
 
 		indent(output, method);
 		output.append("Declaration of virtual method: " + method.getName());
+		output.append(addSymbolTableEntry(method.getenclosingScope(),method.getName()));
 		depth += 2;
 		output.append(method.getType().accept(this));
 		for (Formal formal : method.getFormals())
@@ -143,6 +176,7 @@ public class PrettyPrinter implements Visitor {
 
 		indent(output, method);
 		output.append("Declaration of static method: " + method.getName());
+		output.append(addSymbolTableEntry(method.getenclosingScope(),method.getName()));
 		depth += 2;
 		output.append(method.getType().accept(this));
 		for (Formal formal : method.getFormals())
@@ -158,6 +192,7 @@ public class PrettyPrinter implements Visitor {
 
 		indent(output, assignment);
 		output.append("Assignment statement");
+		output.append(addSymbolTableEntry(assignment.getenclosingScope()));
 		depth += 2;
 		output.append(assignment.getVariable().accept(this));
 		output.append(assignment.getAssignment().accept(this));
@@ -170,6 +205,7 @@ public class PrettyPrinter implements Visitor {
 
 		indent(output, callStatement);
 		output.append("Method call statement");
+		output.append(addSymbolTableEntry(callStatement.getenclosingScope()));
 		++depth;
 		output.append(callStatement.getCall().accept(this));
 		--depth;
@@ -183,6 +219,7 @@ public class PrettyPrinter implements Visitor {
 		output.append("Return statement");
 		if (returnStatement.hasValue())
 			output.append(", with return value");
+		output.append(addSymbolTableEntry(returnStatement.getenclosingScope()));
 		if (returnStatement.hasValue()) {
 			++depth;
 			output.append(returnStatement.getValue().accept(this));
@@ -198,6 +235,7 @@ public class PrettyPrinter implements Visitor {
 		output.append("If statement");
 		if (ifStatement.hasElse())
 			output.append(", with Else operation");
+		output.append(addSymbolTableEntry(ifStatement.getenclosingScope()));
 		depth += 2;
 		output.append(ifStatement.getCondition().accept(this));
 		output.append(ifStatement.getOperation().accept(this));
@@ -212,6 +250,7 @@ public class PrettyPrinter implements Visitor {
 
 		indent(output, whileStatement);
 		output.append("While statement");
+		output.append(addSymbolTableEntry(whileStatement.getenclosingScope()));
 		depth += 2;
 		output.append(whileStatement.getCondition().accept(this));
 		output.append(whileStatement.getOperation().accept(this));
@@ -224,6 +263,7 @@ public class PrettyPrinter implements Visitor {
 
 		indent(output, breakStatement);
 		output.append("Break statement");
+		output.append(addSymbolTableEntry(breakStatement.getenclosingScope()));
 		return output.toString();
 	}
 
@@ -232,6 +272,7 @@ public class PrettyPrinter implements Visitor {
 
 		indent(output, continueStatement);
 		output.append("Continue statement");
+		output.append(addSymbolTableEntry(continueStatement.getenclosingScope()));
 		return output.toString();
 	}
 
@@ -240,6 +281,7 @@ public class PrettyPrinter implements Visitor {
 
 		indent(output, statementsBlock);
 		output.append("Block of statements");
+		output.append(", Symbol table: " + statementsBlock.getenclosingScope().stmtBlockLocation());
 		depth += 2;
 		for (Statement statement : statementsBlock.getStatements())
 			output.append(statement.accept(this));
@@ -257,6 +299,7 @@ public class PrettyPrinter implements Visitor {
 			output.append(", with initial value");
 			++depth;
 		}
+		output.append(addSymbolTableEntry(localVariable.getenclosingScope(),localVariable.getName()));
 		++depth;
 		output.append(localVariable.getType().accept(this));
 		if (localVariable.hasInitValue()) {
@@ -274,6 +317,7 @@ public class PrettyPrinter implements Visitor {
 		output.append("Reference to variable: " + location.getName());
 		if (location.isExternal())
 			output.append(", in external scope");
+		output.append(addSymbolTableEntry(location.getActualST(),location.getName()));//TODO: check what tovi answers
 		if (location.isExternal()) {
 			++depth;
 			output.append(location.getLocation().accept(this));

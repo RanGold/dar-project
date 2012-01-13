@@ -106,6 +106,10 @@ public class SymbolTable {
 		return location;
 	}
 	
+	public String stmtBlockLocation(){
+		return stmtBlockLocation(this);
+	}
+	
 	@Override
 	public String toString() {
 		String output="";

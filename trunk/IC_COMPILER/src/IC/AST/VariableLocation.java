@@ -1,5 +1,7 @@
 package IC.AST;
 
+import IC.SymbolTables.SymbolTable;
+
 /**
  * Variable reference AST node.
  * 
@@ -8,6 +10,8 @@ package IC.AST;
 public class VariableLocation extends Location {
 
 	private Expression location = null;
+	
+	private SymbolTable actualST = null;
 
 	private String name;
 
@@ -53,6 +57,14 @@ public class VariableLocation extends Location {
 
 	public String getName() {
 		return name;
+	}
+	
+	public void setActualST(SymbolTable st){
+		actualST = st;
+	}
+	
+	public SymbolTable getActualST(){
+		return actualST;
 	}
 
 }
