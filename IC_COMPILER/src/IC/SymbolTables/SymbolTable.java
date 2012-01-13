@@ -64,6 +64,15 @@ public class SymbolTable {
 			return null;
 		return parentSymbolTable.getEntryRecursive(key);
 	}
+	
+	public SymbolTable getVariableScope(String key){
+		Symbol ret = entries.get(key);
+		if (ret!=null)
+			return this;
+		if (type.equals(SymbolTableTypes.Global))
+			return null;
+		return parentSymbolTable.getVariableScope(key);
+	}
 
 	public SymbolTable getParentSymbolTable() {
 		return parentSymbolTable;

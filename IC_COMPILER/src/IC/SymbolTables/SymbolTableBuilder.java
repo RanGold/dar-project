@@ -362,8 +362,10 @@ public class SymbolTableBuilder implements Visitor {
 			location.getLocation().accept(this);
 		}
 		else{
-			if (!location.getenclosingScope().existEntryRecursive(location.getName()))
+			SymbolTable enclosingScope = location.getenclosingScope().getVariableScope(location.getName());
+			if (enclosingScope==null)
 				throw new SemanticError("Variable "+location.getName()+" has been used before being declared.",location.getLine());
+			location.setenclosingScope(enclosingScope);
 		}
 		return null;
 	}
