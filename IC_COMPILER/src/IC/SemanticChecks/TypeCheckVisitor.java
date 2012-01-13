@@ -380,6 +380,8 @@ public class TypeCheckVisitor implements Visitor {
 	public Object visit(MathBinaryOp binaryOp) {
 		Type binaryOpType1 = (Type) binaryOp.getFirstOperand().accept(this);
 		Type binaryOpType2 = (Type) binaryOp.getSecondOperand().accept(this);
+		binaryOp.getFirstOperand().setEnclosingType(binaryOpType1);
+		binaryOp.getSecondOperand().setEnclosingType(binaryOpType2);
 		if (binaryOpType1 == null || binaryOpType2 == null) return null;
 		//if binaryOp is '+' types are both int or both string 
 		if (binaryOp.getOperator().equals(BinaryOps.PLUS)){
@@ -396,6 +398,7 @@ public class TypeCheckVisitor implements Visitor {
 		if (!binaryOpType1.subtypeof(TypeTable.intType) || !binaryOpType2.subtypeof(TypeTable.intType)){
 			throw new SemanticError("Mathematical binary operation on a non-int values", binaryOp.getLine());			
 		}
+
 		return TypeTable.intType;
 	}
 
