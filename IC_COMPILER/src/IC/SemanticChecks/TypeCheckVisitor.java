@@ -42,7 +42,6 @@ import IC.SymbolTables.Symbol;
 import IC.Types.ArrayType;
 import IC.Types.ClassType;
 import IC.Types.MethodType;
-import IC.Types.StringType;
 import IC.Types.Type;
 import IC.Types.TypeTable;
 
@@ -384,7 +383,7 @@ public class TypeCheckVisitor implements Visitor {
 		if (binaryOpType1 == null || binaryOpType2 == null) return null;
 		//if binaryOp is '+' types are both int or both string 
 		if (binaryOp.getOperator().equals(BinaryOps.PLUS)){
-			if ((binaryOpType1 instanceof StringType) && (binaryOpType1 instanceof StringType)){
+			if ((binaryOpType1 == TypeTable.stringType) && (binaryOpType2 == TypeTable.stringType)){
 				return TypeTable.stringType;
 			}else{
 				if (!binaryOpType1.subtypeof(TypeTable.intType) || !binaryOpType2.subtypeof(TypeTable.intType)){
