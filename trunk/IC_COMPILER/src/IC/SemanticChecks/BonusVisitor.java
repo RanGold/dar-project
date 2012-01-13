@@ -1,12 +1,13 @@
 package IC.SemanticChecks;
 
-import IC.BinaryOps;
 import IC.AST.ArrayLocation;
 import IC.AST.Assignment;
+import IC.AST.BinaryOp;
 import IC.AST.Break;
 import IC.AST.Call;
 import IC.AST.CallStatement;
 import IC.AST.Continue;
+import IC.AST.Expression;
 import IC.AST.ExpressionBlock;
 import IC.AST.Field;
 import IC.AST.Formal;
@@ -39,10 +40,6 @@ import IC.AST.Visitor;
 import IC.AST.While;
 import IC.SymbolTables.Kind;
 import IC.SymbolTables.Symbol;
-import IC.Types.ClassType;
-import IC.Types.MethodType;
-import IC.Types.Type;
-import IC.Types.TypeTable;
 
 public class BonusVisitor implements Visitor {
 	
@@ -68,7 +65,6 @@ public class BonusVisitor implements Visitor {
 
 	// Helper function - for all types of method
 	private Object methodVisit(Method method, boolean isStatic){
-		// TODO many checks here
 		for (Statement s : method.getStatements()){
 			s.accept(this);
 		}
@@ -102,26 +98,40 @@ public class BonusVisitor implements Visitor {
 	}
 
 	public Object visit(Assignment assignment) {
-		// TODO many checks here
-		assignment.getVariable().accept(this);
 		assignment.getAssignment().accept(this);
+		
+		VariableLocation varLoc;
+		if (assignment.getVariable() instanceof VariableLocation) {
+			varLoc = (VariableLocation)assignment.getVariable();
+		} else {
+			// Only other option is arrayLocation
+			Expression varExp = ((ArrayLocation)assignment.getVariable()).getArray();
+			if (varExp instanceof VariableLocation) {
+				varLoc = (VariableLocation)varExp;
+			} else {
+				return true;
+			}
+		}
+		
+		if (!varLoc.isExternal()) {
+			varLoc.getenclosingScope().getEntryRecursive(varLoc.getName()).setInitialized(true);
+		}
+		
+		assignment.getVariable().accept(this);
 		return true;
 	}
 
 	public Object visit(CallStatement callStatement) {
-		if (callStatement.getCall().accept(this) == null) return null;
-		return true;
+		return callStatement.getCall().accept(this);
 	}
 	
 	public Object visit(Return returnStatement) {
-		Type returnValueType;
+
 		if (returnStatement.hasValue()) {
-			returnValueType = (Type) returnStatement.getValue().accept(this);
-		} else {
-			returnValueType = TypeTable.voidType;
+			return returnStatement.getValue().accept(this);
 		}
 		
-		return returnValueType;
+		return true;
 	}
 
 	public Object visit(If ifStatement) {
@@ -172,6 +182,9 @@ public class BonusVisitor implements Visitor {
 		if (localVariable.hasInitValue()) {
 			localVariable.getInitValue().accept(this);
 		}
+		
+		Symbol locSym = localVariable.getenclosingScope().getEntryRecursive(localVariable.getName());
+		locSym.setInitialized(localVariable.hasInitValue());
 		return true;
 	}
 
@@ -180,10 +193,13 @@ public class BonusVisitor implements Visitor {
 		
 		if (!location.isExternal()) {
 			Symbol locSym = location.getenclosingScope().getEntry(location.getName());
-			return (locSym.getKind() == Kind.FIELD || locSym.getKind() == Kind.FORMAL || (locSym.getKind() == Kind.VAR && locSym.isInitialized()));
-		} else {
-			return true;
+			if (!(locSym.getKind() == Kind.FIELD || locSym.getKind() == Kind.FORMAL || (locSym.getKind() == Kind.VAR && locSym.isInitialized()))) {
+				// TODO : throw warning?
+				System.err.println("Semantic warning at line " + location.getLine() + ": Use of uninitialized local varibale " + location.getName());
+			}
 		}
+		
+		return true;
 	}
 
 	public Object visit(ArrayLocation location) {
@@ -196,110 +212,75 @@ public class BonusVisitor implements Visitor {
 		return resArray && resIndex;
 	}
 
-	private Object checkCallArguments(Call call, Symbol methodSym) {
-		MethodType methodType = (MethodType)methodSym.getType();
-		
-		for (int i = 0; i < methodType.getArguments().size(); i++) {
-			Type curArgType = (Type)call.getArguments().get(i).accept(this); 
-		}
-		
-		return methodType.getReturnVal();
-	}
-	
-	public Object visit(StaticCall call) {
-		Symbol classSym = call.getenclosingScope().getEntryRecursive(call.getClassName());
-		
-		ICClass classRef = ((ClassType)classSym.getType()).getICClass();
-		Symbol methodSym = classRef.getenclosingScope().getEntry(call.getName());
-		return checkCallArguments(call, methodSym);
-	}
-
-	public Object visit(VirtualCall call) {
-		Symbol methodSym = null;
-		if (!call.isExternal()) {
-			methodSym = call.getenclosingScope().getEntryRecursive(call.getName());
-		} else {
-			Type locType = (Type) call.getLocation().accept(this);
-			methodSym = ((ClassType) locType).getICClass().getenclosingScope()
-					.getEntryRecursive(call.getName());
-		}
-		
-		return checkCallArguments(call, methodSym);
-	}
-
-	public Object visit(This thisExpression) {
-		return thisExpression.getenclosingScope().getEntry("this").getType();
-	}
-
-	public Object visit(NewClass newClass) {
-		Type newClasstype = TypeTable.getClassType(newClass);
-		return newClasstype;
-	}
-
-
-	public Object visit(NewArray newArray) {
-		// check the size is integer type
-		Type sizeType = (Type) newArray.getSize().accept(this);
-		
-		// return the array type
-		return newArray.getEnclosingType();
-	}
-
-	public Object visit(Length length) {
-		// check array is of array type
-		Type arrType = (Type) length.getArray().accept(this);
-
-		// return int
-		return TypeTable.intType;
-	}
-
-
-	public Object visit(MathBinaryOp binaryOp) {
-		Type binaryOpType1 = (Type) binaryOp.getFirstOperand().accept(this);
-		Type binaryOpType2 = (Type) binaryOp.getSecondOperand().accept(this);
-		if (binaryOpType1 == null || binaryOpType2 == null) {
-			return null;
-		}
-
-		// if binaryOp is '+' types are both int or both string
-		if (binaryOp.getOperator().equals(BinaryOps.PLUS)) {
-			if (binaryOpType1.subtypeof(TypeTable.stringType)
-					&& binaryOpType2.subtypeof(TypeTable.stringType)) {
-				return TypeTable.stringType;
+	private Object checkCallArguments(Call call) {
+		for (int i = 0; i < call.getArguments().size(); i++) {
+			if (!(Boolean)call.getArguments().get(i).accept(this)) {
+				return false;
 			}
 		}
 		
-		// else binaryOp is only on int types
-		return TypeTable.intType;
+		return true;
+	}
+	
+	public Object visit(StaticCall call) {
+		return checkCallArguments(call);
 	}
 
-	public Object visit(LogicalBinaryOp binaryOp) {
-		Type binaryOpType1 = (Type) binaryOp.getFirstOperand().accept(this);
-		Type binaryOpType2 = (Type) binaryOp.getSecondOperand().accept(this);
-
-		return TypeTable.boolType;
+	public Object visit(VirtualCall call) {
+		if (call.isExternal()) {
+			if (!(Boolean)call.getLocation().accept(this)) {
+				return false;
+			}
+		}
+		
+		return checkCallArguments(call);
 	}
 
-	public Object visit(MathUnaryOp unaryOp) {
-        Type unaryOpType = (Type) unaryOp.getOperand().accept(this);
-        return TypeTable.intType;
+	public Object visit(This thisExpression) {
+		return true;
 	}
 
-	public Object visit(LogicalUnaryOp unaryOp) {
-        Type unaryOpType = (Type) unaryOp.getOperand().accept(this);
-        return TypeTable.boolType;
-}
-
-
-
-	public Object visit(Literal literal) {
-		//return literal.getEnclosingType();
+	public Object visit(NewClass newClass) {
 		return true;
 	}
 
 
+	public Object visit(NewArray newArray) {
+		return newArray.getSize().accept(this);
+	}
+
+	public Object visit(Length length) {
+		return length.getArray().accept(this);
+	}
+
+	private Boolean visitBinOp(BinaryOp binaryOp) {
+		Boolean binaryOp1 = (Boolean)binaryOp.getFirstOperand().accept(this);
+		Boolean binaryOp2 = (Boolean)binaryOp.getSecondOperand().accept(this);
+				
+		return binaryOp1 && binaryOp2;
+	}
+
+	public Object visit(MathBinaryOp binaryOp) {
+		return this.visitBinOp(binaryOp);
+	}
+
+	public Object visit(LogicalBinaryOp binaryOp) {
+		return this.visitBinOp(binaryOp);
+	}
+
+	public Object visit(MathUnaryOp unaryOp) {
+        return unaryOp.getOperand().accept(this);
+	}
+
+	public Object visit(LogicalUnaryOp unaryOp) {
+        return unaryOp.getOperand().accept(this);
+	}
+
+	public Object visit(Literal literal) {
+		return true;
+	}
+
 	public Object visit(ExpressionBlock expressionBlock) {
 		return expressionBlock.getExpression().accept(this);
 	}
-
 }
