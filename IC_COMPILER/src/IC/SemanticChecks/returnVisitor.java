@@ -1,124 +1,76 @@
 package IC.SemanticChecks;
 
-import IC.AST.ArrayLocation;
-import IC.AST.Assignment;
-import IC.AST.BinaryOp;
-import IC.AST.Break;
-import IC.AST.Call;
-import IC.AST.CallStatement;
-import IC.AST.Continue;
-import IC.AST.Expression;
-import IC.AST.ExpressionBlock;
-import IC.AST.Field;
-import IC.AST.Formal;
-import IC.AST.ICClass;
-import IC.AST.If;
-import IC.AST.Length;
-import IC.AST.LibraryMethod;
-import IC.AST.Literal;
-import IC.AST.LocalVariable;
-import IC.AST.LogicalBinaryOp;
-import IC.AST.LogicalUnaryOp;
-import IC.AST.MathBinaryOp;
-import IC.AST.MathUnaryOp;
-import IC.AST.Method;
-import IC.AST.NewArray;
-import IC.AST.NewClass;
-import IC.AST.PrimitiveType;
-import IC.AST.Program;
-import IC.AST.Return;
-import IC.AST.Statement;
-import IC.AST.StatementsBlock;
-import IC.AST.StaticCall;
-import IC.AST.StaticMethod;
-import IC.AST.This;
-import IC.AST.UserType;
-import IC.AST.VariableLocation;
-import IC.AST.VirtualCall;
-import IC.AST.VirtualMethod;
-import IC.AST.Visitor;
-import IC.AST.While;
-import IC.SymbolTables.Kind;
-import IC.SymbolTables.Symbol;
+import IC.AST.*;
+import IC.Types.MethodType;
+import IC.Types.TypeTable;
+
 
 public class returnVisitor implements Visitor {
-	
-	private int inLoop = 0;
 
 	public Object visit(Program program) {
 		for (ICClass icClass : program.getClasses()) {
-			icClass.accept(this);
+			if (!(Boolean)icClass.accept(this))
+				return false;
 		}
 		return true;
 	}
 
 	public Object visit(ICClass icClass) {
 		for (Method method : icClass.getMethods()) {
-			method.accept(this);
+			if (!(Boolean)method.accept(this))
+				return false;
 		}
 		return true;
 	}
 	
 	public Object visit(Field field) {
-		return true;
+		return false;
 	}
 
 	// Helper function - for all types of method
-	private Object methodVisit(Method method, boolean isStatic){
+	private Object methodVisit(Method method){
 		for (Statement s : method.getStatements()){
-			s.accept(this);
+			if ((Boolean) s.accept(this)) 
+				return true;
 		}
-		return true;
+		if (method.getEnclosingType() instanceof IC.Types.MethodType){
+			IC.Types.MethodType mt = (MethodType) method.getEnclosingType();
+			if (mt.getReturnVal()==TypeTable.voidType)
+				return true;
+		}
+		System.err.println("Warning: Method " + method.getName() +" in line "+ method.getLine() +
+				" does not have a return statement at each path");
+		return false;
 	}
 	
 	public Object visit(VirtualMethod method) {
-		return methodVisit(method, false);
+		return methodVisit(method);
 	}
 
 	public Object visit(StaticMethod method) {
-		return methodVisit(method, true);
+		return methodVisit(method);
 	}
 
 	public Object visit(LibraryMethod method) {
-		return methodVisit(method, true);
+		return methodVisit(method);
 	}
 
 	public Object visit(Formal formal) {
-		return true;
+		return false;
 	}
 
 	@Override
 	public Object visit(PrimitiveType type) {
-		return true;
+		return false;
 	}
 
 	@Override
 	public Object visit(UserType type) {
-		return true;
+		return false;
 	}
 
 	public Object visit(Assignment assignment) {
-		assignment.getAssignment().accept(this);
-		
-		VariableLocation varLoc;
-		if (assignment.getVariable() instanceof VariableLocation) {
-			varLoc = (VariableLocation)assignment.getVariable();
-		} else {
-			// Only other option is arrayLocation
-			Expression varExp = ((ArrayLocation)assignment.getVariable()).getArray();
-			if (varExp instanceof VariableLocation) {
-				varLoc = (VariableLocation)varExp;
-			} else {
-				return true;
-			}
-		}
-		
-		if (!varLoc.isExternal()) {
-			varLoc.getenclosingScope().getEntryRecursive(varLoc.getName()).setInitialized(true);
-		}
-		
-		assignment.getVariable().accept(this);
-		return true;
+		return false;
 	}
 
 	public Object visit(CallStatement callStatement) {
@@ -127,10 +79,6 @@ public class returnVisitor implements Visitor {
 	
 	public Object visit(Return returnStatement) {
 
-		if (returnStatement.hasValue()) {
-			return returnStatement.getValue().accept(this);
-		}
-		
 		return true;
 	}
 
@@ -139,41 +87,33 @@ public class returnVisitor implements Visitor {
 		ifStatement.getCondition().accept(this);
 		
 		// Visit the operation in ifStatement
-		ifStatement.getOperation().accept(this);
-		
+
 		// Visit the else operation if exists
-		if (ifStatement.hasElse()){
-			ifStatement.getElseOperation().accept(this);
+		if ( (Boolean) ifStatement.getOperation().accept(this) && ifStatement.hasElse()){
+			if ((Boolean) ifStatement.getElseOperation().accept(this))
+				return true;
 		}
-		return true;
+		return false;
 	}
 
-	public Object visit(While whileStatement) {
-		// Check while condition of type boolean
-		whileStatement.getCondition().accept(this);
-		
-		inLoop++;
-		
+	public Object visit(While whileStatement) {	
 		// Check the operation in whileStatement
-		whileStatement.getOperation().accept(this);
-		inLoop--;
-		
-		return true;
+		return false;
 	}
 
 	public Object visit(Break breakStatement) {
-		return true;
+		return false;
 	}
 
 	public Object visit(Continue continueStatement) {
-		return true;
+		return false;
 	}
 
 	public Object visit(StatementsBlock statementsBlock) {
 		for (Statement s : statementsBlock.getStatements()){
-			s.accept(this);
+			if ((Boolean) s.accept(this)) return true;
 		}
-		return true;
+		return false;
 	}
 
 	
@@ -182,102 +122,62 @@ public class returnVisitor implements Visitor {
 		if (localVariable.hasInitValue()) {
 			localVariable.getInitValue().accept(this);
 		}
-		
-		Symbol locSym = localVariable.getenclosingScope().getEntryRecursive(localVariable.getName());
-		locSym.setInitialized(localVariable.hasInitValue());
-		return true;
+		return false;
 	}
 
 	@Override
 	public Object visit(VariableLocation location) {	
-		
-		if (!location.isExternal()) {
-			Symbol locSym = location.getenclosingScope().getEntry(location.getName());
-			if (!(locSym.getKind() == Kind.FIELD || locSym.getKind() == Kind.FORMAL || (locSym.getKind() == Kind.VAR && locSym.isInitialized()))) {
-				// TODO : throw warning?
-				System.err.println("Semantic warning at line " + location.getLine() + ": Use of uninitialized local varibale " + location.getName());
-			}
-		}
-		
-		return true;
+		return false;
 	}
 
 	public Object visit(ArrayLocation location) {
-		// check index is int type
-		Boolean resIndex = (Boolean)location.getIndex().accept(this);
-
-		// check array is an array type
-		Boolean resArray = (Boolean)location.getArray().accept(this);
-		
-		return resArray && resIndex;
+		return false;
 	}
 
-	private Object checkCallArguments(Call call) {
-		for (int i = 0; i < call.getArguments().size(); i++) {
-			if (!(Boolean)call.getArguments().get(i).accept(this)) {
-				return false;
-			}
-		}
-		
-		return true;
-	}
 	
 	public Object visit(StaticCall call) {
-		return checkCallArguments(call);
+		return false;
 	}
 
 	public Object visit(VirtualCall call) {
-		if (call.isExternal()) {
-			if (!(Boolean)call.getLocation().accept(this)) {
-				return false;
-			}
-		}
-		
-		return checkCallArguments(call);
+		return false;
 	}
 
 	public Object visit(This thisExpression) {
-		return true;
+		return false;
 	}
 
 	public Object visit(NewClass newClass) {
-		return true;
+		return false;
 	}
 
 
 	public Object visit(NewArray newArray) {
-		return newArray.getSize().accept(this);
+		return false;
 	}
 
 	public Object visit(Length length) {
-		return length.getArray().accept(this);
-	}
-
-	private Boolean visitBinOp(BinaryOp binaryOp) {
-		Boolean binaryOp1 = (Boolean)binaryOp.getFirstOperand().accept(this);
-		Boolean binaryOp2 = (Boolean)binaryOp.getSecondOperand().accept(this);
-				
-		return binaryOp1 && binaryOp2;
+		return false;
 	}
 
 	public Object visit(MathBinaryOp binaryOp) {
-		return this.visitBinOp(binaryOp);
+		return false;
 	}
 
 	public Object visit(LogicalBinaryOp binaryOp) {
-		return this.visitBinOp(binaryOp);
+		return false;
 	}
 
 	public Object visit(MathUnaryOp unaryOp) {
-        return unaryOp.getOperand().accept(this);
+        return false;
 	}
 
 	public Object visit(LogicalUnaryOp unaryOp) {
-        return unaryOp.getOperand().accept(this);
+        return false;
 	}
 
 	public Object visit(Literal literal) {
-		return true;
+		return false;
 	}
 
 	public Object visit(ExpressionBlock expressionBlock) {
