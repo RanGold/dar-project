@@ -280,6 +280,7 @@ public class TypeTableBuilderVisitor implements Visitor {
 
 	@Override
 	public Object visit(LogicalBinaryOp binaryOp) {
+		// TODO : here not needed what was in mathbinaryop?
 		binaryOp.getFirstOperand().accept(this);
 		binaryOp.getSecondOperand().accept(this);
 		return null;
