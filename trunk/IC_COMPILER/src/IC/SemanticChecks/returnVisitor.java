@@ -37,7 +37,7 @@ public class returnVisitor implements Visitor {
 			if (mt.getReturnVal()==TypeTable.voidType)
 				return true;
 		}
-		System.err.println("Warning: Method " + method.getName() +" in line "+ method.getLine() +
+		System.err.println("Semantic warning at line " + method.getLine() + ": Method " + method.getName() +
 				" might not have a return statement at each path");
 		return false;
 	}
