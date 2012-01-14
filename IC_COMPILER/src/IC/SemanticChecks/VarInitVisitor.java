@@ -49,7 +49,7 @@ import IC.SymbolTables.Symbol;
 
 public class VarInitVisitor implements Visitor {
 	
-	private int inLoop = 0;
+
 	private HashMap<If, LinkedList<VarRec>> ifAssignments = new HashMap<If, LinkedList<VarRec>>();
 	private Map<If, Boolean> ifState = new HashMap<If, Boolean>();
 	private Stack<If> ifStack = new Stack<If>();
@@ -251,11 +251,8 @@ public class VarInitVisitor implements Visitor {
 		// Check while condition of type boolean
 		whileStatement.getCondition().accept(this);
 		
-		inLoop++;
-		
 		// Check the operation in whileStatement
 		whileStatement.getOperation().accept(this);
-		inLoop--;
 		
 		return true;
 	}
