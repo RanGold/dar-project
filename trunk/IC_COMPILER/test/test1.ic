@@ -28,7 +28,12 @@ class B extends A {
 
 class C extends B {
 	C iB(A a, A b, A c) {
-		c.x = 5; 
+		c.x = 5;
+		
+		boolean y;
+		
+		y = true;
+		this.y = 2;
 		
 		(new C()).iB(new A(), new B(), new C());
 		(new C()).iB(new A(), new A(), new A());
