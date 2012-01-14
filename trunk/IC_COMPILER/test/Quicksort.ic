@@ -99,7 +99,7 @@ class F extends Quicksort {
 	Quicksort qs;
 	int[] foo() {
 		int x;
-		int y = x;
+		int y;
 		boolean b = true;
 		b = (b && !b) || !b;
 		a = new int[4+y];
@@ -111,6 +111,7 @@ class F extends Quicksort {
 		
 		if (false) {
 			x = 2;
+			y = 2;
 		} else {
 			if (true) {
 				x = 3;

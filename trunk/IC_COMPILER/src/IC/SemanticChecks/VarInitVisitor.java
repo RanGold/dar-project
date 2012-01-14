@@ -290,9 +290,10 @@ public class VarInitVisitor implements Visitor {
 		if (!location.isExternal()) {
 			Symbol locSym = location.getenclosingScope().getEntry(location.getName());
 			if (!(locSym.getKind() == Kind.FIELD || locSym.getKind() == Kind.FORMAL || (locSym.getKind() == Kind.VAR && locSym.isInitialized()))) {
-				// TODO : throw warning?
 				System.err.println("Semantic warning at line " + location.getLine() + ": Use of uninitialized local varibale " + location.getName());
 			}
+		} else {
+			location.getLocation().accept(this);
 		}
 		
 		return true;
