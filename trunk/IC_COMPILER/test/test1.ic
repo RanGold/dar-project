@@ -43,6 +43,15 @@ class C extends B {
 		return new C();
 	}
 	
+	int foo2(int y) { 
+  		if (y == 5)
+   			return 1;
+  		else {
+  			x = 4;
+   			y = 3;
+   		}
+	}
+	
 	static int sInt() {
 		int x;
 		int y;

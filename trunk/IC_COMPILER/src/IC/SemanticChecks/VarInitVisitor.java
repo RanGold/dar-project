@@ -150,7 +150,9 @@ public class VarInitVisitor implements Visitor {
 			}
 		}
 		
-		if (!varLoc.isExternal()) {
+		Symbol varLocSym = varLoc.getenclosingScope().getEntry(varLoc.getName());
+		
+		if (!varLoc.isExternal() && varLocSym.getKind() == Kind.VAR) {
 			boolean isPrevInit = varLoc.getenclosingScope().getEntryRecursive(varLoc.getName()).isInitialized();
 			varLoc.getenclosingScope().getEntryRecursive(varLoc.getName()).setInitialized(true);
 			if (this.curIf != null) {

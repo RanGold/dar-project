@@ -81,7 +81,6 @@ public class TypeCheckVisitor implements Visitor {
 	}
 	
 	public Object visit(VirtualMethod method) {
-		// TODO check overriding
 		return method_visit(method, false);
 	}
 
@@ -314,7 +313,6 @@ public class TypeCheckVisitor implements Visitor {
 	public Object visit(VirtualCall call) {
 		Symbol methodSym = null;
 		if (!call.isExternal()) {
-			// TODO : check this!
 			methodSym = call.getenclosingScope().getEntryRecursive(call.getName());
 		} else {
 			Type locType = (Type) call.getLocation().accept(this);
@@ -337,7 +335,7 @@ public class TypeCheckVisitor implements Visitor {
 		}
 		
 		
-		if (methodSym.getKind() != Kind.VIRTUAL_METHOD // TODO: check this
+		if (methodSym.getKind() != Kind.VIRTUAL_METHOD
 				&& (call.isExternal() || methodSym.getKind() != Kind.STATIC_METHOD)) {
 			throw new SemanticError("identifier " + call.getName() + " isn't a valid call", call.getLine());
 		} else {
