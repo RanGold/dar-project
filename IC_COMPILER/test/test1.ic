@@ -27,7 +27,7 @@ class B extends A {
 }
 
 class C extends B {
-	C iB(A a, A b, A c) {
+	B iB(A a, B b, C c) {
 		c.x = 5;
 		
 		boolean y;
@@ -36,7 +36,6 @@ class C extends B {
 		this.y = 2;
 		
 		(new C()).iB(new A(), new B(), new C());
-		(new C()).iB(new A(), new A(), new A());
 		
 		C.sInt();
 		C.main(null);
