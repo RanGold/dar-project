@@ -1,0 +1,11 @@
+////////////////////////////////////
+// using 'this' in static method ///
+////////////////////////////////////
+
+class A
+{
+	int y;
+	static void main(string[] args){
+		int x = this.y;	
+	}
+}

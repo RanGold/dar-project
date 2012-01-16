@@ -1,0 +1,19 @@
+////////////////////////////////
+// return type doesn't match ///
+////////////////////////////////
+
+class A
+{
+	static void main(string[] args){
+		
+	}
+	
+	A foo(int x){
+		return 5;
+	}
+}
+
+class B extends A
+{
+	void foo2(int y) { }
+}

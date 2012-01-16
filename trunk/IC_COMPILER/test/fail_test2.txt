@@ -1,0 +1,19 @@
+//////////////////
+// overloading ///
+//////////////////
+
+class A
+{
+	static void main(string[] args){
+		
+	}
+	
+	A foo(int x){
+		return new A();
+	}
+}
+
+class B extends A
+{
+	void foo(int y) { }
+}
