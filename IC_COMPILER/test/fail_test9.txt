@@ -1,0 +1,29 @@
+////////////////////////////////////////////////
+// warning: no return statement on each path ///
+////////////////////////////////////////////////
+
+class A
+{
+	//string y;
+	static void main(string[] args){
+		
+	}
+	
+	void foo(int x){
+		if ((x==5) == true){
+			int y;
+		}
+	}
+}
+
+class B extends A
+{
+	boolean y2;
+	int foo2(int y) { 
+		if (y == 5)
+			return 1;
+		else
+			y = 3;
+		
+	}
+}

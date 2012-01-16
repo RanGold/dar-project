@@ -1,0 +1,20 @@
+//////////////////////////////////////////////////////////////////////
+// warning: using a variable which might have not been initialized ///
+//////////////////////////////////////////////////////////////////////
+
+class A
+{
+	static void main(string[] args){
+		
+	}
+	
+	void foo(){
+		int y;
+		int x = 3;
+		if (x>2)
+			return;
+		else
+			y = 2;
+		x = y;
+	}
+}
