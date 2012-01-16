@@ -134,13 +134,13 @@ public class SymbolTableBuilder implements Visitor {
 					for (int i=0;i<methodTOoverride_type.getArguments().size();i++){
 						IC.Types.Type type1 = method_type.getArguments().get(i);
 						IC.Types.Type type2 = methodTOoverride_type.getArguments().get(i);
-						if (type1!=type2 /*&& !type2.subtypeof(type1)*/)//TODO: change here
+						if (type1!=type2 /*&& !type2.subtypeof(type1)*/)
 							throw new SemanticError("Overloading of methods is not supported",line);
 					}
 					//check that the return type is correctly overridden
 					IC.Types.Type type1 = method_type.getReturnVal();
 					IC.Types.Type type2 = methodTOoverride_type.getReturnVal();
-					if (type1!=type2 /*&& !type1.subtypeof(type2)*/)//TODO: change here
+					if (type1!=type2 /*&& !type1.subtypeof(type2)*/)
 						throw new SemanticError("Overloading of methods is not supported",line);
 				}
 			}
