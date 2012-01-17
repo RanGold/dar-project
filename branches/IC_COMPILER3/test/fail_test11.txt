@@ -1,0 +1,16 @@
+////////////////////////////////////////////
+// warning: using uninitialized variable ///
+////////////////////////////////////////////
+
+class A
+{
+	static void main(string[] args){
+		
+	}
+	
+	void foo(){
+		int y;
+		int x;
+		x = y;
+	}
+}

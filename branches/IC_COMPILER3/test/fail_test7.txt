@@ -1,0 +1,20 @@
+///////////////////////////////////
+// comparing incompatible types ///
+///////////////////////////////////
+
+class A
+{
+	static void main(string[] args){
+		
+	}
+	
+	void foo(int x){
+		if (5 == true){
+		}
+	}
+}
+
+class B extends A
+{
+	void foo2(int y) { }
+}

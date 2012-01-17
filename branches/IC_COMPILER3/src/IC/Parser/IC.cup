@@ -1,0 +1,573 @@
+package IC.Parser;
+
+import IC.AST.*;
+import IC.*;
+import java_cup.runtime.*;
+import java.util.List;
+import java.util.LinkedList;
+
+action code {:
+	private boolean isDebug = false;
+	
+	private void print_debug_info(String str) {
+		if (this.isDebug) {
+			System.out.println(str);
+		}	
+	}
+:};
+
+parser code {: 
+	public void syntax_error(Symbol cur_token) {
+	}
+	
+	public void unrecovered_syntax_error(Symbol cur_token) throws Exception {
+		done_parsing();
+		throw new SyntaxError(cur_token);
+	}
+:};
+
+////////////////////////////////////////////
+// Symbol list (terminals and non-terminals)
+
+terminal BOOLEAN,CLASS,COMMA,INT,LB,LP,LCBR,RB,RCBR,RP,SEMI,STATIC,STRING,VOID;
+terminal String CLASS_ID;
+terminal String ID;
+
+terminal ASSIGN,DOT,LENGTH;
+terminal BREAK,CONTINUE,ELSE,IF,WHILE,RETURN;
+terminal EXTENDS,NEW,THIS,NULL;
+terminal MOD,MULTIPLY,NEQUAL,DIVIDE,EQUAL,GT,GTE,LAND,LNEG,LOR,LT,LTE;
+terminal FALSE,MINUS,PLUS,TRUE;
+terminal Integer INTEGER;
+terminal String QUOTE;
+terminal UMINUS;
+
+non terminal Program program;
+non terminal List<ICClass> class_list;
+non terminal ICClass class_decl;
+non terminal List<Field> field_list;
+non terminal Method method;
+non terminal List<FieldOrMethod> field_or_method_list; 
+non terminal List<String> id_list;
+non terminal List<Statement> statement_list;
+non terminal Statement statement;
+non terminal Expression expr;
+non terminal List<Expression> expr_list;
+non terminal Literal literal;
+non terminal Location location;
+non terminal Call call;
+non terminal VirtualCall virtualCall;
+non terminal StaticCall staticCall;
+non terminal Formal formal;
+non terminal List<Formal> formal_list;
+non terminal Type type;
+non terminal BinaryOp binaryops;
+non terminal UnaryOp unaryops;
+non terminal Statement statement_short;
+
+//////////////////////////
+// Precedence declarations
+
+
+precedence right ASSIGN;
+precedence left LOR;
+precedence left LAND;
+precedence left EQUAL, NEQUAL;
+precedence nonassoc GT, GTE, LT, LTE;
+precedence left PLUS, MINUS;
+precedence left MULTIPLY, DIVIDE, MOD;
+precedence right UMINUS, LNEG;
+precedence left LP,RP,LB,RB,DOT;
+precedence left ELSE;
+//////////////
+// The grammar
+
+start with program;
+
+//program can have zero classes
+program ::= {: 
+				RESULT = new Program(new LinkedList<ICClass>()); 
+				print_debug_info("new empty program");
+			:}
+			| class_list:cl
+			{: 
+				RESULT = new Program(cl);
+				print_debug_info("new non empty program");
+			:};
+			
+class_list ::= class_decl:cd
+			{: 
+				RESULT = new LinkedList<ICClass>();
+				RESULT.add(cd);
+				print_debug_info("new class decleration added to list");
+			:}
+			| class_list:cl class_decl:cd
+			{:
+				cl.add(cd);
+				RESULT = cl; 
+				print_debug_info("new class decleration added to list");
+			:};
+
+class_decl ::= CLASS CLASS_ID:cid LCBR RCBR
+			{: 
+				RESULT = new ICClass(cidleft, cid, new LinkedList<Field>(), new LinkedList<Method>());
+				print_debug_info("new class decleration "); 
+			:}
+			| CLASS CLASS_ID:cid LCBR field_or_method_list:foml RCBR
+			{:
+				RESULT = new ICClass(cidleft, cid, FieldOrMethod.getFields(foml), FieldOrMethod.getMethods(foml)); 
+				print_debug_info("new class decleration ");
+			:}
+			| CLASS CLASS_ID:cid EXTENDS CLASS_ID:bid LCBR RCBR
+			{: 
+				RESULT = new ICClass(cidleft, cid, bid, new LinkedList<Field>(), new LinkedList<Method>()); 
+				print_debug_info("new class decleration ");
+			:}
+			| CLASS CLASS_ID:cid EXTENDS CLASS_ID:bid LCBR field_or_method_list:foml RCBR
+			{: 
+				RESULT = new ICClass(cidleft, cid, bid, FieldOrMethod.getFields(foml), FieldOrMethod.getMethods(foml));
+				print_debug_info("new class decleration ");
+			:};
+			
+field_or_method_list ::= field_list:fl
+						{:
+							RESULT = new LinkedList<FieldOrMethod>();
+							RESULT.addAll(fl);
+							print_debug_info("new field_or_method_list ");
+						:}
+						| method:m
+						{:
+							RESULT = new LinkedList<FieldOrMethod>();
+							RESULT.add(m);
+							print_debug_info("new field_or_method_list ");
+						:}
+						| field_or_method_list:foml field_list:fl
+						{:
+							foml.addAll(fl);
+							RESULT = foml;
+							print_debug_info("new field_or_method_list ");
+						:}
+						| field_or_method_list:foml method:m
+						{:
+							foml.add(m);
+							RESULT = foml;
+							print_debug_info("new field_or_method_list ");
+						:};
+						
+field_list ::= type:t id_list:idl SEMI
+			{: 
+				RESULT = new LinkedList<Field>();
+				for (String s : idl) {
+					RESULT.add(new Field(t, s));
+					print_debug_info("new field list ");
+				}
+			:};
+
+id_list ::= ID:i
+			{:
+				RESULT = new LinkedList<String>();
+				RESULT.add(i);
+				print_debug_info("new id  added to list "+i);
+			:}
+			| id_list:idl COMMA ID:i
+			{:
+				idl.add(i);
+				RESULT = idl;
+				print_debug_info("new id  added to list "+i);
+			:};
+
+method ::= type:t ID:i LP RP LCBR statement_list:ls RCBR
+			{:
+				RESULT = new VirtualMethod(t, i, new LinkedList<Formal>(), ls);
+				print_debug_info("new method ");
+			:}	
+			| type:t ID:i LP formal_list:fl RP LCBR statement_list:ls RCBR
+			{:
+				RESULT = new VirtualMethod(t, i, fl, ls);
+				print_debug_info("new method ");
+			:}		
+			| VOID ID:i LP RP LCBR statement_list:ls RCBR
+			{:
+				RESULT = new VirtualMethod(new PrimitiveType(ileft,DataTypes.VOID), i, new LinkedList<Formal>(), ls);
+				print_debug_info("new method ");
+			:}	
+			| VOID ID:i LP formal_list:fl RP LCBR statement_list:ls RCBR
+			{:
+				RESULT = new VirtualMethod(new PrimitiveType(ileft,DataTypes.VOID), i, fl, ls);
+				print_debug_info("new method ");
+			:}
+			| STATIC type:t ID:i LP RP LCBR statement_list:ls RCBR
+			{:
+				RESULT = new StaticMethod(t, i, new LinkedList<Formal>(), ls);
+				print_debug_info("new method ");
+			:}	
+			| STATIC type:t ID:i LP formal_list:fl RP LCBR statement_list:ls RCBR
+			{:
+				RESULT = new StaticMethod(t, i, fl, ls);
+				print_debug_info("new method ");
+			:}		
+			| STATIC VOID ID:i LP RP LCBR statement_list:ls RCBR
+			{:
+				RESULT = new StaticMethod(new PrimitiveType(ileft,DataTypes.VOID), i, new LinkedList<Formal>(), ls);
+				print_debug_info("new method ");
+			:}	
+			| STATIC VOID ID:i LP formal_list:fl RP LCBR statement_list:ls RCBR
+			{:
+				RESULT = new StaticMethod(new PrimitiveType(ileft,DataTypes.VOID), i, fl, ls);
+				print_debug_info("new method ");
+			:};
+
+type ::= INT:integ
+			{: 
+				RESULT = new PrimitiveType(integleft, DataTypes.INT);
+				print_debug_info("new type int ");
+			:}
+		| STRING:str
+			{: 
+				RESULT = new PrimitiveType(strleft, DataTypes.STRING); 
+				print_debug_info("new type string ");
+			:}
+		| BOOLEAN:bool
+			{:
+				RESULT = new PrimitiveType(boolleft, DataTypes.BOOLEAN); 
+				print_debug_info("new type bool "); 
+			:}
+		| CLASS_ID:class_id
+			{: 
+				RESULT = new UserType(class_idleft, class_id); 
+				print_debug_info("new type classid "); 
+			:}
+		| type:t LB RB
+			{:	
+				t.incrementDimension();
+				RESULT = t; 
+				print_debug_info("new type dimention ");
+			:};
+			
+formal ::= type:t ID:id
+			{:
+				RESULT = new Formal(t,id);
+				print_debug_info("new formal");
+			:};
+
+formal_list ::= formal:f
+			{: 	
+				RESULT = new LinkedList<Formal>(); 
+				RESULT.add(f);
+				print_debug_info("new formal list add");
+			:}
+			| formal_list:fl COMMA formal:f
+			{:	
+				fl.add(f);
+				RESULT = fl;
+				print_debug_info("new formal list add");
+			:};
+
+// statement_list can be empty
+statement_list ::= 
+				{:
+					RESULT = new LinkedList<Statement>();
+					print_debug_info("new empty statemrnt to statment list");
+				:}
+				| statement_list:sl statement:s
+				{:
+					sl.add(s);
+					RESULT = sl;
+					print_debug_info("new statemrnt to statemtn list");
+				:};
+
+statement_short ::= location:l ASSIGN expr:e SEMI
+				{: 
+					RESULT = new Assignment(l, e);
+					print_debug_info("new statement1");
+				:}
+				| call:c SEMI	
+				{: 
+					RESULT = new CallStatement(c);
+					print_debug_info("new statement2");
+				:}	
+				| RETURN:r SEMI
+				{: 
+					RESULT = new Return(rleft);
+					print_debug_info("new statement3");
+				:}			
+				| RETURN:r expr:e SEMI
+				{: 
+					RESULT = new Return(rleft,e);
+					print_debug_info("new statement4");
+				:}
+				| IF LP expr:e RP statement_short:s
+				{:
+					RESULT = new If(e, s);
+					print_debug_info("new statement5");
+				:}
+				| IF LP expr:e RP statement_short:s1 ELSE statement_short:s2
+				{:
+					RESULT = new If(e, s1, s2);
+					print_debug_info("new statement6");
+				:}
+				| WHILE LP expr:e RP statement:s 
+				{:
+					RESULT = new While(e, s);
+					print_debug_info("new statement7");
+				:}
+				| BREAK:b SEMI
+				{: 
+					RESULT = new Break(bleft);
+					print_debug_info("new statement8");
+				:}
+				| CONTINUE:c SEMI
+				{: 
+					RESULT = new Continue(cleft);
+					print_debug_info("new statement9");
+				:}
+				| LCBR:l statement_list:sl RCBR
+				{: 
+					RESULT = new StatementsBlock(lleft,sl);
+					print_debug_info("new statement10");
+				:};
+
+statement ::= statement_short:ss
+			{:
+				RESULT = ss;
+			:}
+			| type:t ID:i SEMI
+			{:
+				RESULT = new LocalVariable(t,i);
+				print_debug_info("new statement id");
+			:}
+			| type:t ID:i ASSIGN expr:e SEMI
+			{:
+				RESULT = new LocalVariable(t, i, e);
+				print_debug_info("new statement11");
+			:};
+			
+expr ::= location:l
+		{:
+			RESULT = l; 
+			print_debug_info("new expr");
+		:}	
+		| call:c
+		{:
+			RESULT = c; 
+			print_debug_info("new expr");
+		:}	
+		| THIS:t 
+		{:
+			RESULT = new This(tleft); 
+			print_debug_info("new expr");
+		:}
+		| NEW CLASS_ID:cid LP RP
+		{:
+			RESULT =  new NewClass(cidleft,cid); 
+			print_debug_info("new expr");
+		:}
+		| NEW type:t LB expr:e RB
+		{:
+			t.incrementDimension();
+			RESULT =  new NewArray(t, e); 
+			print_debug_info("new expr");
+		:}	
+		| expr:e DOT LENGTH
+		{:
+			RESULT =  new Length(e); 
+			print_debug_info("new expr");
+		:}	
+		| binaryops:bo
+		{:
+			RESULT =  bo; 
+			print_debug_info("new expr");
+		:}
+		| unaryops:uo
+		{:
+			RESULT =  uo; 
+			print_debug_info("new expr");
+		:}		
+		| literal:l 
+		{:
+			RESULT = l; 
+			print_debug_info("new expr");
+		:}
+		| LP expr:e RP
+		{:
+			RESULT = new ExpressionBlock(e); 
+			print_debug_info("new expr");
+		:};			
+
+expr_list ::= expr:e
+			{: 
+				RESULT = new LinkedList<Expression>();
+				RESULT.add(e);
+				print_debug_info("new expr LIST");
+			:}
+			| expr_list:exprl COMMA expr:e
+			{:
+				exprl.add(e);
+				RESULT = exprl; 
+				print_debug_info("new expr LIST");
+			:};
+
+
+call ::= virtualCall:vc
+		{:
+			RESULT = vc;
+			print_debug_info("virtual call");
+		:}
+		| staticCall:sc
+		{:
+			RESULT = sc;
+			print_debug_info("static call");
+		:};
+		
+staticCall ::= CLASS_ID:cid DOT ID:id LP RP
+			{:
+				RESULT = new StaticCall(cidleft, cid, id, new LinkedList<Expression>());
+				print_debug_info("new staticCall");
+			:}
+
+			| CLASS_ID:cid DOT ID:id LP expr_list:exprl RP
+			{:
+				RESULT = new StaticCall(cidleft, cid, id, exprl);
+				print_debug_info("new staticCall");
+			:};
+					
+virtualCall ::= ID:id LP RP
+			{:
+				RESULT = new VirtualCall(idleft, id, new LinkedList<Expression>());
+				print_debug_info("new virtualCall");
+			:}
+			| ID:id LP expr_list:exprl RP
+			{:
+				RESULT = new VirtualCall(idleft, id, exprl);
+				print_debug_info("new virtualCall");
+			:}			
+			| expr:e DOT ID:id LP RP
+			{:
+				RESULT = new VirtualCall(eleft, e, id, new LinkedList<Expression>());
+				print_debug_info("new virtualCall");
+			:}			
+			| expr:e DOT ID:id LP expr_list:exprl RP
+			{:
+				RESULT = new VirtualCall(eleft, e, id, exprl);
+				print_debug_info("new virtualCall");
+			:};
+			
+location ::= ID:i
+			{:
+				RESULT = new VariableLocation(ileft, i);
+				print_debug_info("VariableLocation");
+			:}	
+			| expr:e DOT ID:i
+			{:
+				RESULT = new VariableLocation(eleft, e, i);
+				print_debug_info("VariableLocation");
+			:}				
+			| expr:e1 LB expr:e2 RB 			
+			{:
+				RESULT = new ArrayLocation(e1, e2);
+				print_debug_info("ArrayLocation");
+			:};
+								
+binaryops ::= expr:e1 PLUS expr:e2
+			{: 
+				RESULT = new MathBinaryOp(e1,BinaryOps.PLUS,e2); 
+				print_debug_info("binaryops"); 
+			:}
+			| expr:e1 MINUS expr:e2
+			{: 
+				RESULT = new MathBinaryOp(e1,BinaryOps.MINUS,e2); 
+				print_debug_info("binaryops");
+			:}
+			| expr:e1 MULTIPLY expr:e2
+			{: 
+				RESULT = new MathBinaryOp(e1,BinaryOps.MULTIPLY,e2);
+				print_debug_info("binaryops");
+			:}
+			| expr:e1 DIVIDE expr:e2
+			{: 
+				RESULT = new MathBinaryOp(e1,BinaryOps.DIVIDE,e2);
+				print_debug_info("binaryops");
+			:}
+			| expr:e1 MOD expr:e2
+			{: 
+				RESULT = new MathBinaryOp(e1,BinaryOps.MOD,e2);
+				print_debug_info("binaryops"); 
+			:}
+			| expr:e1 LAND expr:e2
+			{: 
+				RESULT = new LogicalBinaryOp(e1,BinaryOps.LAND,e2);
+				print_debug_info("binaryops"); 
+			:}
+			| expr:e1 LOR expr:e2
+			{: 
+				RESULT = new LogicalBinaryOp(e1,BinaryOps.LOR,e2); 
+				print_debug_info("binaryops");
+			:}			
+			| expr:e1 LT expr:e2
+			{: 
+				RESULT = new LogicalBinaryOp(e1,BinaryOps.LT,e2); 
+				print_debug_info("binaryops");
+			:}				
+			| expr:e1 LTE expr:e2
+			{: 
+				RESULT = new LogicalBinaryOp(e1,BinaryOps.LTE,e2); 
+				print_debug_info("binaryops");
+			:}				
+			| expr:e1 GT expr:e2
+			{: 
+				RESULT = new LogicalBinaryOp(e1,BinaryOps.GT,e2); 
+				print_debug_info("binaryops");
+			:}				
+			| expr:e1 GTE expr:e2
+			{: 
+				RESULT = new LogicalBinaryOp(e1,BinaryOps.GTE,e2);
+				print_debug_info("binaryops"); 
+			:}				
+			| expr:e1 EQUAL expr:e2
+			{: 
+				RESULT = new LogicalBinaryOp(e1,BinaryOps.EQUAL,e2); 
+				print_debug_info("binaryops");
+			:}
+			| expr:e1 NEQUAL expr:e2
+			{: 
+				RESULT = new LogicalBinaryOp(e1,BinaryOps.NEQUAL,e2);
+				print_debug_info("binaryops"); 
+			:};												
+
+unaryops ::= LNEG expr:e
+			{: 
+				RESULT = new LogicalUnaryOp(UnaryOps.LNEG,e);
+				print_debug_info("unaryops"); 
+			:}
+			| MINUS expr:e
+			{: 
+				RESULT = new MathUnaryOp(UnaryOps.UMINUS,e); 
+				print_debug_info("unaryops"); 
+			:}
+			%prec UMINUS;
+		
+literal ::= INTEGER:i
+			{: 
+				RESULT = new Literal(ileft, LiteralTypes.INTEGER,i); 
+				print_debug_info("int literal");
+			:}
+			| QUOTE:q
+			{: 
+				RESULT = new Literal(qleft, LiteralTypes.STRING,q);
+				print_debug_info("string literal"); 
+			:}
+			| TRUE:t
+			{: 
+				RESULT = new Literal(tleft, LiteralTypes.TRUE); 
+				print_debug_info("true literal");
+			:}
+			| FALSE:f
+			{: 
+				RESULT = new Literal(fleft, LiteralTypes.FALSE);
+				print_debug_info("false literal"); 
+			:}
+			| NULL:n
+			{: 
+				RESULT = new Literal(nleft, LiteralTypes.NULL); 
+				print_debug_info("null literal");
+			:};

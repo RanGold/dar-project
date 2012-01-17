@@ -1,0 +1,19 @@
+////////////////////////////////
+// assign incompatible types ///
+////////////////////////////////
+
+class A
+{
+	static void main(string[] args){
+		
+	}
+	
+	void foo(int x){
+		x = "hey";
+	}
+}
+
+class B extends A
+{
+	void foo2(int y) { }
+}
