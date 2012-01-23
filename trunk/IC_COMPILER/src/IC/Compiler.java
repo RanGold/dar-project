@@ -2,6 +2,8 @@ package IC;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+
+import lir.TranslationVisitor;
 import IC.AST.ICClass;
 import IC.AST.PrettyPrinter;
 import IC.AST.Program;
@@ -137,5 +139,11 @@ public class Compiler {
 			
 			System.out.println(TypeTable.getString(pathTOic));//print the Type Table
 		}
+		
+		
+		
+		
+		Visitor v = new TranslationVisitor();
+		System.out.println((String)ICRoot.accept(v));
 	}
 }

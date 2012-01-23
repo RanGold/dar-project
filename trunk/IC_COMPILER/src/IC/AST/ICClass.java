@@ -89,7 +89,7 @@ public class ICClass extends ASTNode {
 		return fieldToOffset.get(fieldName);
 	}
 	
-	public int getMethosOffset(String MethodName){
+	public int getMethodOffset(String MethodName){
 		return methodToOffset.get(MethodName);
 	}
 	
