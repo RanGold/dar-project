@@ -1,5 +1,6 @@
 package IC.AST;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -11,7 +12,7 @@ import java.util.Map;
 public class Program extends ASTNode {
 
 	private List<ICClass> classes;
-	private Map<String, ICClass> nameToClass;
+	private Map<String, ICClass> nameToClass = new HashMap<String, ICClass>();
 	
 
 	public Object accept(Visitor visitor) {
