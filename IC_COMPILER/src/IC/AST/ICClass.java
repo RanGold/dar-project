@@ -133,10 +133,16 @@ public class ICClass extends ASTNode {
 				fieldCounter++;
 			}
 		}	
+		lirSize = this.methodToOffset.size() + this.fieldToOffset.size() + 1;
+	}
+	
+	public int GetClassSize(){
+		return lirSize;
 	}
 	
 	//class layout
 	private Map<String, Integer> methodToOffset;
 	private Map<String, Integer> fieldToOffset;
+	private int lirSize;
 
 }
