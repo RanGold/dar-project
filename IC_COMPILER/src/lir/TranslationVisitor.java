@@ -144,7 +144,7 @@ public class TranslationVisitor implements Visitor {
 		//appending the blocks of methods
 		lirOutput.append("# Method Blocks\r\n");
 		lirOutput.append(instructions.toString());
-		
+
 		return lirOutput.toString();
 	}
 
@@ -328,32 +328,95 @@ public class TranslationVisitor implements Visitor {
 
 	@Override
 	public Object visit(LogicalBinaryOp binaryOp) {
-		// TODO Auto-generated method stub
-		return null;
+		NodeLirTrans expTrs1 = (NodeLirTrans) binaryOp.getFirstOperand().accept(this);
+		NodeLirTrans expTrs2 = (NodeLirTrans) binaryOp.getSecondOperand().accept(this);
+		StringBuilder s = new StringBuilder();
+		switch(binaryOp.getOperator()){
+		case LAND:
+			s.append("And ");
+			s.append(expTrs1.resultRegister+",");
+			s.append(expTrs2.resultRegister+"\r\n");
+			return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+		case LOR:
+			s.append("Or ");
+			s.append(expTrs1.resultRegister+",");
+			s.append(expTrs2.resultRegister+"\r\n");
+			return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+		case LT:
+			s.append("Compare ");
+			s.append(expTrs1.resultRegister+",");
+			s.append(expTrs2.resultRegister+"\r\n");
+			s.append("JumpL ");
+			break;
+		case LTE:
+			s.append("Compare ");
+			s.append(expTrs1.resultRegister+",");
+			s.append(expTrs2.resultRegister+"\r\n");
+			s.append("JumpLE ");
+			break;
+		case GT:
+			s.append("Compare ");
+			s.append(expTrs1.resultRegister+",");
+			s.append(expTrs2.resultRegister+"\r\n");
+			s.append("JumpG ");
+			break;
+		case GTE:
+			s.append("Compare ");
+			s.append(expTrs1.resultRegister+",");
+			s.append(expTrs2.resultRegister+"\r\n");
+			s.append("JumpGE ");
+			break;
+		case EQUAL:
+			s.append("Compare ");
+			s.append(expTrs1.resultRegister+",");
+			s.append(expTrs2.resultRegister+"\r\n");
+			s.append("JumpTrue ");
+			break;
+		case NEQUAL:
+			s.append("Compare ");
+			s.append(expTrs1.resultRegister+",");
+			s.append(expTrs2.resultRegister+"\r\n");
+			s.append("JumpFalse ");
+		}
+		s.append("_True_" + strNum + ":\r\n");
+		s.append("Move 0," + expTrs2.resultRegister + "\r\n");
+		s.append("Jump " + "_End_Boolean_" + strNum);
+		s.append("_True_" + strNum + ":\r\n"); //if false
+		s.append("_True_" + strNum + ":\r\n"); //if true
+		s.append("Move 1," + expTrs2.resultRegister + "\r\n");	
+		s.append("_End_Boolean_" + strNum + ":\r\n");
+		strNum++;
+		return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
 	}
 
 	@Override
 	public Object visit(MathUnaryOp unaryOp) {
-		// TODO Auto-generated method stub
-		return null;
+		NodeLirTrans expTrs = (NodeLirTrans) unaryOp.getOperand().accept(this);
+		StringBuilder s = new StringBuilder();
+		s.append(expTrs.codeTrans);
+		s.append("Mul -1,");
+		s.append(expTrs.resultRegister + "\r\n");
+		return new NodeLirTrans(s.toString(), expTrs.resultRegister);
 	}
 
 	@Override
 	public Object visit(LogicalUnaryOp unaryOp) {
-		// TODO Auto-generated method stub
-		return null;
+		NodeLirTrans expTrs = (NodeLirTrans) unaryOp.getOperand().accept(this);
+		StringBuilder s = new StringBuilder();
+		s.append(expTrs.codeTrans);
+		s.append("Not ");
+		s.append(expTrs.resultRegister + "\r\n");
+		return new NodeLirTrans(s.toString(), expTrs.resultRegister);
 	}
 
 	@Override
 	public Object visit(Literal literal) {
-		// TODO Auto-generated method stub
-		return null;
+		return new NodeLirTrans("",literal.getValue().toString()); //TODO - check the toString
 	}
 
 	@Override
 	public Object visit(ExpressionBlock expressionBlock) {
-		// TODO Auto-generated method stub
-		return null;
+		return expressionBlock.getExpression().accept(this);
 	}
 
 }
