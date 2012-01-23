@@ -122,12 +122,16 @@ public class ICClass extends ASTNode {
 		
 		//enter the class fields and methods
 		for (Method m : methods){
-			methodToOffset.put(m.getName(),methodCounter);
-			methodCounter++;
+			if (!methodToOffset.containsKey(m.getName())){
+				methodToOffset.put(m.getName(),methodCounter);
+				methodCounter++;
+			}		
 		}
 		for (Field f : fields){
-			fieldToOffset.put(f.getName(),fieldCounter);
-			fieldCounter++;
+			if (!fieldToOffset.containsKey(f.getName())){
+				fieldToOffset.put(f.getName(),fieldCounter);
+				fieldCounter++;
+			}
 		}	
 	}
 	
