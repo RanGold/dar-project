@@ -44,15 +44,15 @@ import IC.AST.While;
 public class TranslationVisitor implements Visitor {
 	private Map<String, String> stringLiterals;
 	private Map<String, List<String>> dispatchTable;
-	//private Map<String, String> methods;
 	private StringBuilder lirOutput;
+	private StringBuilder instructions;
 	private int strNum;
 	
 	public TranslationVisitor() {
 		this.stringLiterals = new LinkedHashMap<String, String>();
-		this.dispatchTable = new HashMap<String, List<String>>();
-		//this.methods = new HashMap<String, String>();
+		this.dispatchTable = new LinkedHashMap<String, List<String>>();
 		this.lirOutput = new StringBuilder();
+		this.instructions = new StringBuilder();
 		this.strNum = 1;
 	}
 	
@@ -61,7 +61,7 @@ public class TranslationVisitor implements Visitor {
 	 * @param key - the string literal (i.e. "daniel")
 	 * @return the label if exist, or new label if it doesn't already exist
 	 */
-	private String getStringLiteralName(String key){
+	private String getStringLiteralName(String key){//TODO verify "" before string literals
 		String value = stringLiterals.get(key);
 		//entry does not exist
 		if (value == null){
@@ -73,7 +73,7 @@ public class TranslationVisitor implements Visitor {
 	}
 	
 	/**
-	 * adds label for class to dispath table
+	 * adds label for class to dispatch table
 	 * @param className - the name of a class
 	 * @return the label for the input class name, if it doesn't exist it creates a new label
 	 */
@@ -85,19 +85,49 @@ public class TranslationVisitor implements Visitor {
 		return label;
 	}
 	
+	/**
+	 * adds label for method to dispatch table
+	 * @param className - the name of a class
+	 * @param methodName - the name of a method
+	 * @return the label of the method of the class, if it doesn't exist it creates a new label
+	 */
+	private String getMethodLabel(String className, String methodName){
+		String classLabel = getClassLabel(className);
+		String methodLabel = "_" + methodName;
+		if (!dispatchTable.get(classLabel).contains(methodLabel)){
+			dispatchTable.get(classLabel).add(methodLabel);
+		}
+		return methodLabel;
+	}
+	
 	@Override
 	public Object visit(Program program) {
 		for (ICClass icClass : program.getClasses())
 		{
-			icClass.accept(this);
+			instructions.append((String)icClass.accept(this));
+			instructions.append("\n");
 		}
 		
 		//appending the string literals defined during the run of the visitor
 		for (Entry<String, String> stringLiteral : stringLiterals.entrySet()){
-			lirOutput.append(stringLiteral.getValue() + ": " + stringLiteral.getKey());
+			lirOutput.append(stringLiteral.getValue() + ": " + stringLiteral.getKey() + "\n");
 		}
 		
-		return null;
+		//appending the dispatch tables defined during the run of the visitor
+		for (Entry<String, List<String>> disT : dispatchTable.entrySet()){
+			lirOutput.append(disT.getKey() + ": [");
+			boolean first = true;
+			for (String methodLabel : disT.getValue()){
+				if (first){
+					lirOutput.append(methodLabel);
+					first = false;
+				}
+				lirOutput.append("," + methodLabel);
+			}
+			lirOutput.append("]\n");
+		}
+		
+		return lirOutput.toString();
 	}
 
 	@Override
