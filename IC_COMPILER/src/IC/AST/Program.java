@@ -1,6 +1,7 @@
 package IC.AST;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Root AST node for an IC program.
@@ -10,6 +11,8 @@ import java.util.List;
 public class Program extends ASTNode {
 
 	private List<ICClass> classes;
+	private Map<String, ICClass> nameToClass;
+	
 
 	public Object accept(Visitor visitor) {
 		return visitor.visit(this);
@@ -25,8 +28,18 @@ public class Program extends ASTNode {
 		super(0);
 		this.classes = classes;
 	}
-
+	
 	public List<ICClass> getClasses() {
 		return classes;
+	}
+	
+	public void setClassesOffsets(){
+		for (ICClass cl : classes){
+			nameToClass.put(cl.getName(), cl);
+		}
+		for (ICClass cl : classes){
+			cl.initOffsets(cl.hasSuperClass()? nameToClass.get(cl.getSuperClassName()) : null);
+		}
+		
 	}
 }
