@@ -53,7 +53,7 @@ public class TranslationVisitor implements Visitor {
 	public TranslationVisitor() {
 		this.stringLiterals = new LinkedHashMap<String, String>();
 		this.dispatchTable = new LinkedHashMap<String, List<String>>();
-		this.fieldOffsets = new LinkedHashMap<String, String>();
+		this.fieldOffsets = new HashMap<String, String>();
 		this.lirOutput = new StringBuilder();
 		this.instructions = new StringBuilder();
 		this.strNum = 1;
