@@ -25,6 +25,7 @@ import IC.AST.LogicalBinaryOp;
 import IC.AST.LogicalUnaryOp;
 import IC.AST.MathBinaryOp;
 import IC.AST.MathUnaryOp;
+import IC.AST.Method;
 import IC.AST.NewArray;
 import IC.AST.NewClass;
 import IC.AST.PrimitiveType;
@@ -44,6 +45,7 @@ import IC.AST.While;
 public class TranslationVisitor implements Visitor {
 	private Map<String, String> stringLiterals;
 	private Map<String, List<String>> dispatchTable;
+	private Map<String, String> fieldOffsets;
 	private StringBuilder lirOutput;
 	private StringBuilder instructions;
 	private int strNum;
@@ -51,6 +53,7 @@ public class TranslationVisitor implements Visitor {
 	public TranslationVisitor() {
 		this.stringLiterals = new LinkedHashMap<String, String>();
 		this.dispatchTable = new LinkedHashMap<String, List<String>>();
+		this.fieldOffsets = new LinkedHashMap<String, String>();
 		this.lirOutput = new StringBuilder();
 		this.instructions = new StringBuilder();
 		this.strNum = 1;
@@ -102,43 +105,80 @@ public class TranslationVisitor implements Visitor {
 	
 	@Override
 	public Object visit(Program program) {
+		program.setClassesOffsets();
+		
 		for (ICClass icClass : program.getClasses())
 		{
 			instructions.append((String)icClass.accept(this));
-			instructions.append("\n");
+			instructions.append("\r\n");
 		}
+		
+		lirOutput.append("# Lir code\r\n\r\n");
 		
 		//appending the string literals defined during the run of the visitor
+		lirOutput.append("# String Literals\r\n");
 		for (Entry<String, String> stringLiteral : stringLiterals.entrySet()){
-			lirOutput.append(stringLiteral.getValue() + ": " + stringLiteral.getKey() + "\n");
+			lirOutput.append(stringLiteral.getValue() + ": " + stringLiteral.getKey() + "\r\n");
 		}
+		lirOutput.append("\r\n");
 		
 		//appending the dispatch tables defined during the run of the visitor
-		for (Entry<String, List<String>> disT : dispatchTable.entrySet()){
-			lirOutput.append(disT.getKey() + ": [");
+		lirOutput.append("# Dispatch Tables\r\n");
+		for (Entry<String, List<String>> classLabel : dispatchTable.entrySet()){
+			lirOutput.append(classLabel.getKey() + ": [");
 			boolean first = true;
-			for (String methodLabel : disT.getValue()){
+			for (String methodLabel : classLabel.getValue()){
 				if (first){
 					lirOutput.append(methodLabel);
 					first = false;
 				}
 				lirOutput.append("," + methodLabel);
 			}
-			lirOutput.append("]\n");
+			lirOutput.append("]\r\n");
+			
+			//add comment for field offsets
+			lirOutput.append(fieldOffsets.get(classLabel.getKey()));
 		}
+		lirOutput.append("\r\n");
+		
+		//appending the blocks of methods
+		lirOutput.append("# Method Blocks\r\n");
+		lirOutput.append(instructions.toString());
 		
 		return lirOutput.toString();
 	}
 
 	@Override
 	public Object visit(ICClass icClass) {
-		// TODO Auto-generated method stub
-		return null;
+		StringBuilder classInstructions = new StringBuilder();
+		
+		if (!icClass.getName().equals("Library")){//TODO should we avoid library?
+			for (Method method : icClass.getMethods()){
+				//building the dispatch table
+				if (method instanceof VirtualMethod){
+					getMethodLabel(icClass.getName(), method.getName());
+				}
+			}
+			
+			//adding comments for field offsets
+			StringBuilder fieldOffsetsComment = new StringBuilder();
+			fieldOffsetsComment.append("# field offsets:\r\n");
+			for (Field field : icClass.getFields()){
+				fieldOffsetsComment.append("# " + field.getName() + ": " + icClass.getFieldOffset(field.getName()) + "\r\n");
+			}
+			fieldOffsets.put(getClassLabel(icClass.getName()), fieldOffsetsComment.toString());
+		}
+		
+		for (Method method : icClass.getMethods()){
+			classInstructions.append((String)(method.accept(this)==null?"":method.accept(this)));
+		}
+		classInstructions.append("\r\n");
+		
+		return classInstructions.toString();
 	}
 
 	@Override
 	public Object visit(Field field) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
