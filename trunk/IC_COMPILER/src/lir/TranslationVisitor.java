@@ -77,6 +77,9 @@ public class TranslationVisitor implements Visitor {
 		return value;
 	}
 
+	private String getClassLabel(String className){
+		return "_DV_" + className;
+	}
 	
 	/**
 	 * adds label for method to dispatch table
@@ -175,7 +178,7 @@ public class TranslationVisitor implements Visitor {
 				methodLables[method.getValue()] =  getMethodLabel(icClass, method.getKey());
 			}
 			
-			dispatchTables.put("_DV_" + icClass.getName(), methodLables);
+			dispatchTables.put(getClassLabel(icClass.getName()), methodLables);
 			
 			//adding comments for field offsets
 			StringBuilder fieldOffsetsComment = new StringBuilder();
@@ -183,7 +186,7 @@ public class TranslationVisitor implements Visitor {
 			for (Entry<String,Integer> field : icClass.getFieldsOffsets().entrySet()){
 				fieldOffsetsComment.append("# " + field.getKey() + ": " + field.getValue() + "\r\n");
 			}
-			fieldOffsets.put("_DV_" + icClass.getName(), fieldOffsetsComment.toString());
+			fieldOffsets.put(getClassLabel(icClass.getName()), fieldOffsetsComment.toString());
 			
 			for (Method method : icClass.getMethods()){
 				NodeLirTrans methodTrs = (NodeLirTrans) method.accept(this);
@@ -341,7 +344,7 @@ public class TranslationVisitor implements Visitor {
 		String resultRegister = RegisterPool.getRegister();
 		s.append("Library __allocateObject(" + objectSize + "),");
 		s.append(resultRegister + "\r\n");
-		s.append("MoveField " + "_DV_" + newClass.getName() + ","); //TODO: add function that does that
+		s.append("MoveField " + getClassLabel(newClass.getName()) + ","); //TODO: add function that does that
 		s.append(resultRegister + ".0");
 		return new NodeLirTrans(s.toString(),resultRegister);
 	}
