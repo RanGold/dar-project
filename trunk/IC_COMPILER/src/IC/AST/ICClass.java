@@ -1,7 +1,7 @@
 package IC.AST;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -20,6 +20,11 @@ public class ICClass extends ASTNode {
 	private List<Field> fields;
 
 	private List<Method> methods;
+	
+	//class layout
+	private Map<String, Integer> methodToOffset;
+	private Map<String, Integer> fieldToOffset;
+	private Integer lirSize = null;
 
 	public Object accept(Visitor visitor) {
 		return visitor.visit(this);
@@ -93,6 +98,14 @@ public class ICClass extends ASTNode {
 		return methodToOffset.get(MethodName);
 	}
 	
+	public Map <String,Integer> getFieldsOffsets(){
+		return this.fieldToOffset;
+	}
+	
+	public Map <String,Integer> getMethodsOffsets(){
+		return this.methodToOffset;
+	}
+	
 	public void copyMyOffset(Map<String, Integer> methods, Map<String, Integer> fields){//private
 		for (Entry<String, Integer> entry: this.methodToOffset.entrySet()){
 			methods.put(entry.getKey(), entry.getValue());
@@ -104,8 +117,8 @@ public class ICClass extends ASTNode {
 	
 	
 	public void initOffsets(ICClass father){
-		this.methodToOffset = new HashMap<String, Integer>();
-		this.fieldToOffset = new HashMap<String, Integer>();
+		this.methodToOffset = new LinkedHashMap<String, Integer>();
+		this.fieldToOffset = new LinkedHashMap<String, Integer>();
 		int methodCounter = 0;
 		int fieldCounter = 1;
 		
@@ -122,7 +135,8 @@ public class ICClass extends ASTNode {
 		
 		//enter the class fields and methods
 		for (Method m : methods){
-			if (!methodToOffset.containsKey(m.getName())){
+			
+			if ((m instanceof VirtualMethod) && !methodToOffset.containsKey(m.getName())){
 				methodToOffset.put(m.getName(),methodCounter);
 				methodCounter++;
 			}		
@@ -133,16 +147,13 @@ public class ICClass extends ASTNode {
 				fieldCounter++;
 			}
 		}	
-		lirSize = this.methodToOffset.size() + this.fieldToOffset.size() + 1;
+		lirSize = (this.methodToOffset.size() + this.fieldToOffset.size() + 1) * 4;
 	}
 	
 	public int GetClassSize(){
+		if (lirSize == null) {
+			throw new RuntimeException("This should be called only after initOffsets");
+		}
 		return lirSize;
 	}
-	
-	//class layout
-	private Map<String, Integer> methodToOffset;
-	private Map<String, Integer> fieldToOffset;
-	private int lirSize;
-
 }
