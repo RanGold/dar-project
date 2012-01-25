@@ -7,12 +7,10 @@ public class Symbol {
 	private Type type;
 	private Kind kind;
 	private boolean isInitialized;
-
+	private String distinctId;
+	
 	public Symbol(String id, Type type, Kind kind) {
-		this.id = id;
-		this.type = type;
-		this.kind = kind;
-		this.isInitialized = false;
+		this(id, type,kind, false);
 	}
 	
 	public Symbol(String id, Type type, Kind kind, boolean isInitialized) {
@@ -46,5 +44,26 @@ public class Symbol {
 				|| kind.equals(Kind.VIRTUAL_METHOD))
 			return kind + ": " + id + " " + type;
 		return kind + ": " + type + " " + id;
+	}
+
+	public String getDistinctId() {
+		return distinctId;
+	}
+
+	public void setDistinctId(int distinctId) {
+		String s = Integer.toString(distinctId);
+		switch(kind){
+		case FIELD:
+			s = "f" + s;
+			break;
+		case FORMAL:
+			s = "p" + s;
+			break;
+		case VAR:
+			s = "v" + s; 
+		default: throw new RuntimeException("Should not get here");//TODO - delete
+		}
+		
+		this.distinctId = s + id;
 	}
 }

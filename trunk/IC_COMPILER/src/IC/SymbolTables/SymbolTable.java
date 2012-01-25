@@ -7,21 +7,33 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import IC.SemanticChecks.SemanticError;
+import IC.Types.Type;
 
 public class SymbolTable {
 
+	
 	private Map<String, Symbol> entries;
 	private String id;
 	private SymbolTableTypes type;
 	private SymbolTable parentSymbolTable;
 	private List<SymbolTable> children;
-
+	private static int idCounter = 1;
+	private int symbolId;
+	
+	
+	
+	private static synchronized int getNextID() {
+		return idCounter++;
+	}
+	
+	
 	public SymbolTable(String id, SymbolTableTypes type) {
 		this.id = id;
 		this.type = type;
 		entries = new LinkedHashMap<String, Symbol>();
 		children = new LinkedList<SymbolTable>();
 		parentSymbolTable = null;
+		this.symbolId = getNextID();
 	}
 
 	public SymbolTable(String id, SymbolTable parentSymbolTable,
@@ -32,6 +44,7 @@ public class SymbolTable {
 
 	public void addEntry(String key, Symbol data,int line) {
 		if (!entries.containsKey(key)) {
+			data.setDistinctId(symbolId);
 			entries.put(key, data);
 		} else {
 			throw new SemanticError("Illegal reuse of name "+key,line);
