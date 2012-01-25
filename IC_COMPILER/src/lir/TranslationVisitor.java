@@ -12,6 +12,7 @@ import IC.AST.Assignment;
 import IC.AST.Break;
 import IC.AST.CallStatement;
 import IC.AST.Continue;
+import IC.AST.Expression;
 import IC.AST.ExpressionBlock;
 import IC.AST.Field;
 import IC.AST.Formal;
@@ -42,6 +43,8 @@ import IC.AST.VirtualCall;
 import IC.AST.VirtualMethod;
 import IC.AST.Visitor;
 import IC.AST.While;
+import IC.SymbolTables.Kind;
+import IC.Types.ClassType;
 import IC.Types.TypeTable;
 
 public class TranslationVisitor implements Visitor {
@@ -52,13 +55,13 @@ public class TranslationVisitor implements Visitor {
 	private StringBuilder instructions;
 	private int strNum;
 	private StringBuilder main;
+	private Map<String, ICClass> nameToClass; 
 	private Stack<Integer> whileLables = new Stack<Integer>();
 	
 	private int getNextId(){
 		strNum++;
 		return strNum;
 	}
-	
 	
 	public TranslationVisitor() {
 		this.stringLiterals = new LinkedHashMap<String, String>();
@@ -127,8 +130,28 @@ public class TranslationVisitor implements Visitor {
 		return true;
 	}
 	
+	private NodeLirTrans loadGeneric(Expression expression){
+		NodeLirTrans expTrs = (NodeLirTrans) expression.accept(this);
+		String resultRegister = RegisterPool.getRegister();
+		StringBuilder s = new StringBuilder();
+		s.append(expTrs.codeTrans);
+		if (expTrs.resultRegister.contains("[")) {
+			s.append("MoveArray ");
+		}
+		else if (expTrs.resultRegister.contains(".")) {
+			s.append("MoveField ");
+		}
+		else {
+			s.append("Move ");
+		}
+		s.append(expTrs.resultRegister + ",");
+		s.append(resultRegister + "\r\n");
+		return new NodeLirTrans(s.toString(),resultRegister);
+	}
+	
 	@Override
 	public Object visit(Program program) {
+		nameToClass = program.getNameToClass();
 		program.setClassesOffsets();
 		
 		for (ICClass icClass : program.getClasses())
@@ -290,7 +313,7 @@ public class TranslationVisitor implements Visitor {
 		int id = getNextId();
 		NodeLirTrans condTrs = loadGeneric(ifStatement.getCondition());
 		s.append(condTrs.codeTrans + "\r\n");
-		s.append("Compare 0," condTrs.resultRegister + "\r\n");
+		s.append("Compare 0," + condTrs.resultRegister + "\r\n");
 		s.append("JumpTrue _false_" + id + "\r\n");
 		NodeLirTrans operTrans = (NodeLirTrans) ifStatement.getOperation().accept(this);
 		s.append(operTrans.codeTrans);
@@ -312,7 +335,7 @@ public class TranslationVisitor implements Visitor {
 		s.append("_while_" + id + ":\r\n");
 		NodeLirTrans condTrs = loadGeneric(whileStatement.getCondition());
 		s.append(condTrs.codeTrans + "\r\n");
-		s.append("Compare 0," condTrs.resultRegister + "\r\n");
+		s.append("Compare 0," + condTrs.resultRegister + "\r\n");
 		s.append("JumpTrue _end_while_" + id + "\r\n");
 		NodeLirTrans operTrs = (NodeLirTrans)whileStatement.getOperation().accept(this);
 		s.append("Jump _while_" + id + "\r\n");
@@ -350,14 +373,45 @@ public class TranslationVisitor implements Visitor {
 
 	@Override
 	public Object visit(VariableLocation location) {
-		// TODO Auto-generated method stub
-		return null;
+		StringBuilder s = new StringBuilder();
+		if (location.isExternal()){
+			NodeLirTrans expTrs1 = loadGeneric(location.getLocation());
+			s.append(expTrs1.codeTrans);
+			
+			ICClass classInstance = ((ClassType)location.getLocation().getEnclosingType()).getICClass();
+			int varLocationNum = classInstance.getFieldOffset(location.getName()); 
+			String arraySymbol = expTrs1.resultRegister + "." + varLocationNum + "\r\n";
+			return new NodeLirTrans(s.toString(),arraySymbol);
+		}
+		else{
+			if(location.getenclosingScope().getEntryRecursive(location.getName()).getKind().equals(Kind.FIELD)){
+				String classLocationReg = RegisterPool.getRegister();
+				s.append("Move this," + classLocationReg);
+				
+				ICClass classInstance = ((ClassType)location.getLocation().getEnclosingType()).getICClass();
+				int varLocationNum = classInstance.getFieldOffset(location.getName()); 
+				String arraySymbol = classLocationReg + "." + varLocationNum + "\r\n";
+				return new NodeLirTrans(s.toString(),arraySymbol);
+			}
+			else{
+				String classLocationReg = RegisterPool.getRegister();
+				s.append("Move " + location.getName() + "," + classLocationReg);
+				return new NodeLirTrans(s.toString(),classLocationReg);
+			}
+		}//TODO distinct id
+		
+		
 	}
 
 	@Override
 	public Object visit(ArrayLocation location) {
-		// TODO Auto-generated method stub
-		return null;
+		NodeLirTrans expTrs1 = loadGeneric(location.getArray());
+		NodeLirTrans expTrs2 = loadGeneric(location.getIndex());
+		StringBuilder s = new StringBuilder();
+		s.append(expTrs1.codeTrans);
+		s.append(expTrs2.codeTrans);
+		String arraySymbol = expTrs1.resultRegister + "[" + expTrs2.resultRegister + "]\r\n";
+		return new NodeLirTrans(s.toString(),arraySymbol);
 	}
 
 	@Override
@@ -381,12 +435,12 @@ public class TranslationVisitor implements Visitor {
 	@Override
 	public Object visit(NewClass newClass) {
 		StringBuilder s = new StringBuilder();
-		int objectSize = 0;
+		int objectSize = 0;//TODO change this to actual class size
 		String resultRegister = RegisterPool.getRegister();
 		s.append("Library __allocateObject(" + objectSize + "),");
 		s.append(resultRegister + "\r\n");
-		s.append("MoveField " + getClassLabel(newClass.getName()) + ","); //TODO: add function that does that
-		s.append(resultRegister + ".0");
+		s.append("MoveField " + getClassLabel(newClass.getName()) + ",");
+		s.append(resultRegister + ".0\r\n");
 		return new NodeLirTrans(s.toString(),resultRegister);
 	}
 
@@ -395,6 +449,7 @@ public class TranslationVisitor implements Visitor {
 		//NodeLirTrans expTrs = (NodeLirTrans) newArray.getType().accept(this); //TODO not needed?
 		NodeLirTrans expTrs = (NodeLirTrans) newArray.getSize().accept(this);
 		StringBuilder s = new StringBuilder();
+		s.append(expTrs.codeTrans);
 		s.append("Library __allocateArray(" + expTrs.resultRegister + "),");
 		s.append(expTrs.resultRegister + "\r\n");
 		return new NodeLirTrans(s.toString(),expTrs.resultRegister);
@@ -402,28 +457,38 @@ public class TranslationVisitor implements Visitor {
 
 	@Override
 	public Object visit(Length length) {
-		NodeLirTrans expTrs = (NodeLirTrans) length.getArray().accept(this);
+		NodeLirTrans expTrs = loadGeneric(length.getArray());
 		StringBuilder s = new StringBuilder();
+		s.append(expTrs.codeTrans);
 		s.append("ArrayLength ");
 		s.append(expTrs.resultRegister + ",");
 		s.append(expTrs.resultRegister + "\r\n");
-		return new NodeLirTrans(s.toString(), expTrs.resultRegister);//TODO check that every basic literal/var returns register, otherwise change to new register
+		return new NodeLirTrans(s.toString(), expTrs.resultRegister);
 	}
 
 	@Override
 	public Object visit(MathBinaryOp binaryOp) {
-		NodeLirTrans expTrs1 = (NodeLirTrans) binaryOp.getFirstOperand().accept(this);
-		NodeLirTrans expTrs2 = (NodeLirTrans) binaryOp.getSecondOperand().accept(this);
+		NodeLirTrans expTrs1 = loadGeneric(binaryOp.getFirstOperand());
+		NodeLirTrans expTrs2 = loadGeneric(binaryOp.getSecondOperand());
 		StringBuilder s = new StringBuilder();
-		s.append(expTrs1.codeTrans); // TODO: added this code
-		s.append(expTrs2.codeTrans); // TODO: added this code
+		s.append(expTrs1.codeTrans);
+		s.append(expTrs2.codeTrans);
 		s.append("# Mathematical binary operation\r\n");
 		switch(binaryOp.getOperator()){
 		case PLUS:
-			s.append("Add ");
-			s.append(expTrs1.resultRegister+",");
-			s.append(expTrs2.resultRegister+"\r\n");
-			return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+			if (binaryOp.getFirstOperand().getenclosingScope().equals(TypeTable.stringType)){
+				s.append("Library __stringCat(");
+				s.append(expTrs1.resultRegister+",");
+				s.append(expTrs2.resultRegister+"),");
+				s.append(expTrs2.resultRegister);
+				return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+			}
+			else{
+				s.append("Add ");
+				s.append(expTrs1.resultRegister+",");
+				s.append(expTrs2.resultRegister+"\r\n");
+				return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+			}
 		case MINUS:
 			s.append("Sub ");
 			s.append(expTrs1.resultRegister+",");
@@ -451,11 +516,11 @@ public class TranslationVisitor implements Visitor {
 
 	@Override
 	public Object visit(LogicalBinaryOp binaryOp) {
-		NodeLirTrans expTrs1 = (NodeLirTrans) binaryOp.getFirstOperand().accept(this);
-		NodeLirTrans expTrs2 = (NodeLirTrans) binaryOp.getSecondOperand().accept(this);
+		NodeLirTrans expTrs1 = loadGeneric(binaryOp.getFirstOperand());
+		NodeLirTrans expTrs2 = loadGeneric(binaryOp.getSecondOperand());
 		StringBuilder s = new StringBuilder();
-		s.append(expTrs1.codeTrans); // TODO: added this code
-		s.append(expTrs2.codeTrans); // TODO: added this code
+		s.append(expTrs1.codeTrans);
+		s.append(expTrs2.codeTrans);
 		s.append("# Logical binary operation\r\n");
 		switch(binaryOp.getOperator()){
 		case LAND:
@@ -508,7 +573,6 @@ public class TranslationVisitor implements Visitor {
 		s.append("_True_" + id + "\r\n");
 		s.append("Move 0," + expTrs2.resultRegister + "\r\n");
 		s.append("Jump " + "_End_Boolean_" + id);
-		//s.append("_True_" + id + ":\r\n"); //if false //TODO: why twice?
 		s.append("_True_" + id + ":\r\n"); //if true
 		s.append("Move 1," + expTrs2.resultRegister + "\r\n");	
 		s.append("_End_Boolean_" + id + ":\r\n");
@@ -517,7 +581,7 @@ public class TranslationVisitor implements Visitor {
 
 	@Override
 	public Object visit(MathUnaryOp unaryOp) {
-		NodeLirTrans expTrs = (NodeLirTrans) unaryOp.getOperand().accept(this);
+		NodeLirTrans expTrs = loadGeneric(unaryOp.getOperand());
 		StringBuilder s = new StringBuilder();
 		s.append("# Mathematical unary operation\r\n");
 		s.append(expTrs.codeTrans);
@@ -528,11 +592,11 @@ public class TranslationVisitor implements Visitor {
 
 	@Override
 	public Object visit(LogicalUnaryOp unaryOp) {
-		NodeLirTrans expTrs = (NodeLirTrans) unaryOp.getOperand().accept(this);
+		NodeLirTrans expTrs = loadGeneric(unaryOp.getOperand());
 		StringBuilder s = new StringBuilder();
 		s.append("# Logical unary operation\r\n");
 		s.append(expTrs.codeTrans);
-		s.append("Not ");
+		s.append("Not ");//TODO neg?
 		s.append(expTrs.resultRegister + "\r\n");
 		return new NodeLirTrans(s.toString(), expTrs.resultRegister);
 	}
