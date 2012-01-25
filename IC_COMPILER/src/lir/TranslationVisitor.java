@@ -1,9 +1,7 @@
 package lir;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -31,6 +29,7 @@ import IC.AST.NewClass;
 import IC.AST.PrimitiveType;
 import IC.AST.Program;
 import IC.AST.Return;
+import IC.AST.Statement;
 import IC.AST.StatementsBlock;
 import IC.AST.StaticCall;
 import IC.AST.StaticMethod;
@@ -41,18 +40,21 @@ import IC.AST.VirtualCall;
 import IC.AST.VirtualMethod;
 import IC.AST.Visitor;
 import IC.AST.While;
+import IC.Types.TypeTable;
 
 public class TranslationVisitor implements Visitor {
 	private Map<String, String> stringLiterals;
-	private Map<String, List<String>> dispatchTable;
+	private Map<String, String[]> dispatchTables;
 	private Map<String, String> fieldOffsets;
 	private StringBuilder lirOutput;
 	private StringBuilder instructions;
 	private int strNum;
+	private StringBuilder main = new StringBuilder();
+	
 	
 	public TranslationVisitor() {
 		this.stringLiterals = new LinkedHashMap<String, String>();
-		this.dispatchTable = new LinkedHashMap<String, List<String>>();
+		this.dispatchTables = new LinkedHashMap<String, String[]>();
 		this.fieldOffsets = new HashMap<String, String>();
 		this.lirOutput = new StringBuilder();
 		this.instructions = new StringBuilder();
@@ -64,7 +66,7 @@ public class TranslationVisitor implements Visitor {
 	 * @param key - the string literal (i.e. "daniel")
 	 * @return the label if exist, or new label if it doesn't already exist
 	 */
-	private String getStringLiteralName(String key){//TODO verify "" before string literals
+	private String getStringLiteralName(String key) {//TODO verify "" before string literals
 		String value = stringLiterals.get(key);
 		//entry does not exist
 		if (value == null){
@@ -74,19 +76,7 @@ public class TranslationVisitor implements Visitor {
 		}
 		return value;
 	}
-	
-	/**
-	 * adds label for class to dispatch table
-	 * @param className - the name of a class
-	 * @return the label for the input class name, if it doesn't exist it creates a new label
-	 */
-	private String getClassLabel(String className){
-		String label = "_DV_" + className;
-		if (dispatchTable.get(label) == null){
-			dispatchTable.put(label, new ArrayList<String>());
-		}
-		return label;
-	}
+
 	
 	/**
 	 * adds label for method to dispatch table
@@ -94,13 +84,36 @@ public class TranslationVisitor implements Visitor {
 	 * @param methodName - the name of a method
 	 * @return the label of the method of the class, if it doesn't exist it creates a new label
 	 */
-	private String getMethodLabel(String className, String methodName){
-		String classLabel = getClassLabel(className);
-		String methodLabel = "_" + methodName;
-		if (!dispatchTable.get(classLabel).contains(methodLabel)){
-			dispatchTable.get(classLabel).add(methodLabel);
-		}
+	private String getMethodLabel(ICClass icClass, String methodName){
+		String className = icClass.getenclosingScope().getVariableScope(methodName).getID();
+		String methodLabel = "_" +  className + "_" + methodName;
 		return methodLabel;
+	}
+	
+	//checks it its a main function
+	private boolean checkMain(Method method){
+		
+		if (!method.getName().equals("main")){
+			return false;
+		}
+		
+		//check that the method is static
+		if(!(method instanceof StaticMethod)){
+			return false;
+		}
+		//check correct number of parameters
+		if (method.getFormals().size()!=1){
+			return false;
+		}
+		//check parameter's type
+		if (!method.getFormals().get(0).getType().getEnclosingType().subtypeof(TypeTable.arrayType(TypeTable.stringType)) || method.getFormals().get(0).getType().getDimension()!=1){
+			return false;
+		}
+		//check return parameter
+		if (!method.getType().getEnclosingType().subtypeof(TypeTable.voidType)){
+			return false;
+		}
+		return true;
 	}
 	
 	@Override
@@ -109,9 +122,12 @@ public class TranslationVisitor implements Visitor {
 		
 		for (ICClass icClass : program.getClasses())
 		{
-			instructions.append((String)icClass.accept(this));
+			instructions.append(((NodeLirTrans)icClass.accept(this)).codeTrans);
 			instructions.append("\r\n");
 		}
+		
+		instructions.append(main.toString());
+		instructions.append("\r\n");
 		
 		lirOutput.append("# Lir code\r\n\r\n");
 		
@@ -124,7 +140,7 @@ public class TranslationVisitor implements Visitor {
 		
 		//appending the dispatch tables defined during the run of the visitor
 		lirOutput.append("# Dispatch Tables\r\n");
-		for (Entry<String, List<String>> classLabel : dispatchTable.entrySet()){
+		for (Entry<String, String[]> classLabel : dispatchTables.entrySet()){
 			lirOutput.append(classLabel.getKey() + ": [");
 			boolean first = true;
 			for (String methodLabel : classLabel.getValue()){
@@ -151,30 +167,40 @@ public class TranslationVisitor implements Visitor {
 	@Override
 	public Object visit(ICClass icClass) {
 		StringBuilder classInstructions = new StringBuilder();
-		
+	
 		if (!icClass.getName().equals("Library")){//TODO should we avoid library?
-			for (Method method : icClass.getMethods()){
+			String[] methodLables = new String[icClass.getMethodsOffsets().size()];
+			for (Entry<String, Integer> method : icClass.getMethodsOffsets().entrySet()){
 				//building the dispatch table
-				if (method instanceof VirtualMethod){
-					getMethodLabel(icClass.getName(), method.getName());
-				}
+				methodLables[method.getValue()] =  getMethodLabel(icClass, method.getKey());
 			}
+			
+			dispatchTables.put("_DV_" + icClass.getName(), methodLables);
 			
 			//adding comments for field offsets
 			StringBuilder fieldOffsetsComment = new StringBuilder();
 			fieldOffsetsComment.append("# field offsets:\r\n");
-			for (Field field : icClass.getFields()){
-				fieldOffsetsComment.append("# " + field.getName() + ": " + icClass.getFieldOffset(field.getName()) + "\r\n");
+			for (Entry<String,Integer> field : icClass.getFieldsOffsets().entrySet()){
+				fieldOffsetsComment.append("# " + field.getKey() + ": " + field.getValue() + "\r\n");
 			}
-			fieldOffsets.put(getClassLabel(icClass.getName()), fieldOffsetsComment.toString());
+			fieldOffsets.put("_DV_" + icClass.getName(), fieldOffsetsComment.toString());
+			
+			for (Method method : icClass.getMethods()){
+				NodeLirTrans methodTrs = (NodeLirTrans) method.accept(this);
+				if (checkMain(method)){
+					main.append("# main in " + icClass.getName() + "\r\n");
+					main.append("_ic_main:\r\n");
+					main.append(methodTrs.codeTrans);
+				} else {
+					classInstructions.append(getMethodLabel(icClass, method.getName()) + ":\r\n");
+					classInstructions.append(methodTrs.codeTrans + "\r\n");
+				}
+			}
+
+			return new NodeLirTrans(classInstructions.toString(), "");
 		}
 		
-		for (Method method : icClass.getMethods()){
-			classInstructions.append((String)(method.accept(this)==null?"":method.accept(this)));
-		}
-		classInstructions.append("\r\n");
-		
-		return classInstructions.toString();
+		return new NodeLirTrans("", "");
 	}
 
 	@Override
@@ -182,28 +208,34 @@ public class TranslationVisitor implements Visitor {
 		return null;
 	}
 
+	
+	private NodeLirTrans methodVisit(Method method){
+		StringBuilder sb = new StringBuilder();
+		for (Statement s : method.getStatements()){
+			sb.append(((NodeLirTrans)s.accept(this)).codeTrans);
+		}
+		sb.append("Return 0 \r\n");
+		return new NodeLirTrans(sb.toString(), "");
+	}
+	
 	@Override
 	public Object visit(VirtualMethod method) {
-		// TODO Auto-generated method stub
-		return null;
+		return methodVisit(method);
 	}
 
 	@Override
 	public Object visit(StaticMethod method) {
-		// TODO Auto-generated method stub
-		return null;
+		return methodVisit(method);
 	}
 
 	@Override
 	public Object visit(LibraryMethod method) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new RuntimeException("Should not get here");
 	}
 
 	@Override
 	public Object visit(Formal formal) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new RuntimeException("Should not get here");
 	}
 
 	@Override
