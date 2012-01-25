@@ -2,8 +2,10 @@ package lir;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Stack;
 
 import IC.AST.ArrayLocation;
 import IC.AST.Assignment;
@@ -50,6 +52,13 @@ public class TranslationVisitor implements Visitor {
 	private StringBuilder instructions;
 	private int strNum;
 	private StringBuilder main;
+	private Stack<Integer> whileLables = new Stack<Integer>();
+	
+	private int getNextId(){
+		strNum++;
+		return strNum;
+	}
+	
 	
 	public TranslationVisitor() {
 		this.stringLiterals = new LinkedHashMap<String, String>();
@@ -70,9 +79,8 @@ public class TranslationVisitor implements Visitor {
 		String value = stringLiterals.get(key);
 		//entry does not exist
 		if (value == null){
-			value = "str" + strNum;
+			value = "str" + getNextId();
 			stringLiterals.put(key, value);
-			strNum++;
 		}
 		return value;
 	}
@@ -243,14 +251,12 @@ public class TranslationVisitor implements Visitor {
 
 	@Override
 	public Object visit(PrimitiveType type) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new RuntimeException("Should not get here");
 	}
 
 	@Override
 	public Object visit(UserType type) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new RuntimeException("Should not get here");
 	}
 
 	@Override
@@ -267,38 +273,73 @@ public class TranslationVisitor implements Visitor {
 
 	@Override
 	public Object visit(Return returnStatement) {
-		// TODO Auto-generated method stub
-		return null;
+		StringBuilder s = new StringBuilder();
+		if (returnStatement.hasValue()){
+			NodeLirTrans valueTrs = loadGeneric(returnStatement.getValue());
+			s.append(valueTrs.codeTrans);
+			s.append("Return " + valueTrs.resultRegister);
+		}else{
+			s.append("Return");
+		}
+		return new NodeLirTrans(s.toString(), "");
 	}
 
 	@Override
 	public Object visit(If ifStatement) {
-		// TODO Auto-generated method stub
-		return null;
+		StringBuilder s = new StringBuilder();
+		int id = getNextId();
+		NodeLirTrans condTrs = loadGeneric(ifStatement.getCondition());
+		s.append(condTrs.codeTrans + "\r\n");
+		s.append("Compare 0," condTrs.resultRegister + "\r\n");
+		s.append("JumpTrue _false_" + id + "\r\n");
+		NodeLirTrans operTrans = (NodeLirTrans) ifStatement.getOperation().accept(this);
+		s.append(operTrans.codeTrans);
+		s.append("Jump _end_" + id + "\r\n");
+		s.append("_false_" + id + ":\r\n");
+		if (ifStatement.hasElse()){
+			NodeLirTrans elseTrans = (NodeLirTrans) ifStatement.getElseOperation().accept(this);
+			s.append(elseTrans.codeTrans);
+		}
+		s.append("end_" + id + "\r\n");
+		return new NodeLirTrans(s.toString(), "");
 	}
 
 	@Override
 	public Object visit(While whileStatement) {
-		// TODO Auto-generated method stub
-		return null;
+		StringBuilder s = new StringBuilder();
+		int id = getNextId();
+		whileLables.push(id);
+		s.append("_while_" + id + ":\r\n");
+		NodeLirTrans condTrs = loadGeneric(whileStatement.getCondition());
+		s.append(condTrs.codeTrans + "\r\n");
+		s.append("Compare 0," condTrs.resultRegister + "\r\n");
+		s.append("JumpTrue _end_while_" + id + "\r\n");
+		NodeLirTrans operTrs = (NodeLirTrans)whileStatement.getOperation().accept(this);
+		s.append("Jump _while_" + id + "\r\n");
+		s.append("_end_while_" + id + "\r\n");
+		whileLables.pop();
+		
+		return new NodeLirTrans(s.toString(), ""); 
 	}
 
 	@Override
 	public Object visit(Break breakStatement) {
-		// TODO Auto-generated method stub
-		return null;
+		return new NodeLirTrans("Jump _end_while_" + whileLables.peek(), ""); 
 	}
 
 	@Override
 	public Object visit(Continue continueStatement) {
-		// TODO Auto-generated method stub
-		return null;
+		return new NodeLirTrans("Jump _while_" + whileLables.peek(), ""); 
 	}
 
 	@Override
 	public Object visit(StatementsBlock statementsBlock) {
-		// TODO Auto-generated method stub
-		return null;
+		StringBuilder sb = new StringBuilder();
+		for(Statement s : statementsBlock.getStatements()){
+			NodeLirTrans sTrans = (NodeLirTrans) s.accept(this);
+			sb.append(sTrans.codeTrans + "\r\n");
+		}
+		return new NodeLirTrans(sb.toString(),"");
 	}
 
 	@Override
@@ -463,14 +504,14 @@ public class TranslationVisitor implements Visitor {
 			s.append(expTrs2.resultRegister+"\r\n");
 			s.append("JumpFalse ");
 		}
-		s.append("_True_" + strNum + "\r\n");
+		int id = getNextId();
+		s.append("_True_" + id + "\r\n");
 		s.append("Move 0," + expTrs2.resultRegister + "\r\n");
-		s.append("Jump " + "_End_Boolean_" + strNum);
-		//s.append("_True_" + strNum + ":\r\n"); //if false //TODO: why twice?
-		s.append("_True_" + strNum + ":\r\n"); //if true
+		s.append("Jump " + "_End_Boolean_" + id);
+		//s.append("_True_" + id + ":\r\n"); //if false //TODO: why twice?
+		s.append("_True_" + id + ":\r\n"); //if true
 		s.append("Move 1," + expTrs2.resultRegister + "\r\n");	
-		s.append("_End_Boolean_" + strNum + ":\r\n");
-		strNum++;
+		s.append("_End_Boolean_" + id + ":\r\n");
 		return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
 	}
 
