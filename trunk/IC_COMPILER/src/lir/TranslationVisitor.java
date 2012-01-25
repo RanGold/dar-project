@@ -49,8 +49,7 @@ public class TranslationVisitor implements Visitor {
 	private StringBuilder lirOutput;
 	private StringBuilder instructions;
 	private int strNum;
-	private StringBuilder main = new StringBuilder();
-	
+	private StringBuilder main;
 	
 	public TranslationVisitor() {
 		this.stringLiterals = new LinkedHashMap<String, String>();
@@ -58,6 +57,7 @@ public class TranslationVisitor implements Visitor {
 		this.fieldOffsets = new HashMap<String, String>();
 		this.lirOutput = new StringBuilder();
 		this.instructions = new StringBuilder();
+		this.main = new StringBuilder();
 		this.strNum = 1;
 	}
 	
@@ -336,26 +336,73 @@ public class TranslationVisitor implements Visitor {
 
 	@Override
 	public Object visit(NewClass newClass) {
-		// TODO Auto-generated method stub
-		return null;
+		StringBuilder s = new StringBuilder();
+		int objectSize = 0;
+		String resultRegister = RegisterPool.getRegister();
+		s.append("Library __allocateObject(" + objectSize + "),");
+		s.append(resultRegister + "\r\n");
+		s.append("MoveField " + "_DV_" + newClass.getName() + ","); //TODO: add function that does that
+		s.append(resultRegister + ".0");
+		return new NodeLirTrans(s.toString(),resultRegister);
 	}
 
 	@Override
 	public Object visit(NewArray newArray) {
-		// TODO Auto-generated method stub
-		return null;
+		//NodeLirTrans expTrs = (NodeLirTrans) newArray.getType().accept(this); //TODO not needed?
+		NodeLirTrans expTrs = (NodeLirTrans) newArray.getSize().accept(this);
+		StringBuilder s = new StringBuilder();
+		s.append("Library __allocateArray(" + expTrs.resultRegister + "),");
+		s.append(expTrs.resultRegister + "\r\n");
+		return new NodeLirTrans(s.toString(),expTrs.resultRegister);
 	}
 
 	@Override
 	public Object visit(Length length) {
-		// TODO Auto-generated method stub
-		return null;
+		NodeLirTrans expTrs = (NodeLirTrans) length.getArray().accept(this);
+		StringBuilder s = new StringBuilder();
+		s.append("ArrayLength ");
+		s.append(expTrs.resultRegister + ",");
+		s.append(expTrs.resultRegister + "\r\n");
+		return new NodeLirTrans(s.toString(), expTrs.resultRegister);//TODO check that every basic literal/var returns register, otherwise change to new register
 	}
 
 	@Override
 	public Object visit(MathBinaryOp binaryOp) {
-		// TODO Auto-generated method stub
-		return null;
+		NodeLirTrans expTrs1 = (NodeLirTrans) binaryOp.getFirstOperand().accept(this);
+		NodeLirTrans expTrs2 = (NodeLirTrans) binaryOp.getSecondOperand().accept(this);
+		StringBuilder s = new StringBuilder();
+		s.append(expTrs1.codeTrans); // TODO: added this code
+		s.append(expTrs2.codeTrans); // TODO: added this code
+		s.append("# Mathematical binary operation\r\n");
+		switch(binaryOp.getOperator()){
+		case PLUS:
+			s.append("Add ");
+			s.append(expTrs1.resultRegister+",");
+			s.append(expTrs2.resultRegister+"\r\n");
+			return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+		case MINUS:
+			s.append("Sub ");
+			s.append(expTrs1.resultRegister+",");
+			s.append(expTrs2.resultRegister+"\r\n");
+			return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+		case MULTIPLY:
+			s.append("Mul ");
+			s.append(expTrs1.resultRegister+",");
+			s.append(expTrs2.resultRegister+"\r\n");
+			return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+		case DIVIDE:
+			s.append("Div ");
+			s.append(expTrs1.resultRegister+",");
+			s.append(expTrs2.resultRegister+"\r\n");
+			return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+		case MOD:
+			s.append("Mod ");
+			s.append(expTrs1.resultRegister+",");
+			s.append(expTrs2.resultRegister+"\r\n");
+			return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+		default: 
+			return null;
+		}
 	}
 
 	@Override
@@ -363,6 +410,9 @@ public class TranslationVisitor implements Visitor {
 		NodeLirTrans expTrs1 = (NodeLirTrans) binaryOp.getFirstOperand().accept(this);
 		NodeLirTrans expTrs2 = (NodeLirTrans) binaryOp.getSecondOperand().accept(this);
 		StringBuilder s = new StringBuilder();
+		s.append(expTrs1.codeTrans); // TODO: added this code
+		s.append(expTrs2.codeTrans); // TODO: added this code
+		s.append("# Logical binary operation\r\n");
 		switch(binaryOp.getOperator()){
 		case LAND:
 			s.append("And ");
@@ -410,10 +460,10 @@ public class TranslationVisitor implements Visitor {
 			s.append(expTrs2.resultRegister+"\r\n");
 			s.append("JumpFalse ");
 		}
-		s.append("_True_" + strNum + ":\r\n");
+		s.append("_True_" + strNum + "\r\n");
 		s.append("Move 0," + expTrs2.resultRegister + "\r\n");
 		s.append("Jump " + "_End_Boolean_" + strNum);
-		s.append("_True_" + strNum + ":\r\n"); //if false
+		//s.append("_True_" + strNum + ":\r\n"); //if false //TODO: why twice?
 		s.append("_True_" + strNum + ":\r\n"); //if true
 		s.append("Move 1," + expTrs2.resultRegister + "\r\n");	
 		s.append("_End_Boolean_" + strNum + ":\r\n");
@@ -425,6 +475,7 @@ public class TranslationVisitor implements Visitor {
 	public Object visit(MathUnaryOp unaryOp) {
 		NodeLirTrans expTrs = (NodeLirTrans) unaryOp.getOperand().accept(this);
 		StringBuilder s = new StringBuilder();
+		s.append("# Mathematical unary operation\r\n");
 		s.append(expTrs.codeTrans);
 		s.append("Mul -1,");
 		s.append(expTrs.resultRegister + "\r\n");
@@ -435,6 +486,7 @@ public class TranslationVisitor implements Visitor {
 	public Object visit(LogicalUnaryOp unaryOp) {
 		NodeLirTrans expTrs = (NodeLirTrans) unaryOp.getOperand().accept(this);
 		StringBuilder s = new StringBuilder();
+		s.append("# Logical unary operation\r\n");
 		s.append(expTrs.codeTrans);
 		s.append("Not ");
 		s.append(expTrs.resultRegister + "\r\n");
@@ -443,7 +495,12 @@ public class TranslationVisitor implements Visitor {
 
 	@Override
 	public Object visit(Literal literal) {
-		return new NodeLirTrans("",literal.getValue().toString()); //TODO - check the toString
+		StringBuilder s = new StringBuilder();
+		s.append("Move ");
+		s.append(literal.getValue().toString() + ",");
+		String resultRegister = RegisterPool.getRegister();
+		s.append(resultRegister + "\r\n");
+		return new NodeLirTrans(s.toString(),resultRegister);
 	}
 
 	@Override
