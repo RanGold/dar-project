@@ -43,4 +43,8 @@ public class Program extends ASTNode {
 		}
 		
 	}
+	
+	public Map<String, ICClass> getNameToClass(){
+		return nameToClass; 
+	}
 }
