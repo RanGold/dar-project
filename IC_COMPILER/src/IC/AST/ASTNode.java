@@ -47,7 +47,6 @@ public abstract class ASTNode {
 
 	public void setenclosingScope(SymbolTable enclosingScope) {
 		this.enclosingScope = enclosingScope;
-		enclosingScope.setContainer(this);
 	}
 	
 	public IC.Types.Type getEnclosingType() {
