@@ -1,7 +1,9 @@
 package IC;
 
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 
 import lir.TranslationVisitor;
 import IC.AST.ICClass;
@@ -23,7 +25,7 @@ public class Compiler {
 
 	public static void main(String[] args) {
 		boolean parse_libic = false, print_ast = false, seen_ICpath = false, dump_symtab = false, print_lir = false;
-		String pathTOlibic = "libic.sig", pathTOic = null;
+		String pathTOlibic = "libic.sig", pathToIC = null;
 
 		if ((args.length == 0) || (args.length > 4)) {
 			System.err.println("Usage: java IC.Compiler <file.ic> [-L</path/to/libic.sig>] [-print-ast] [-dump-symtab]");
@@ -69,7 +71,7 @@ public class Compiler {
 					return;
 				}
 				seen_ICpath = true;
-				pathTOic = args[i];
+				pathToIC = args[i];
 			}
 		}
 
@@ -89,11 +91,11 @@ public class Compiler {
 		// Parse the IC file
 		Program ICRoot = null;
 		try {
-			FileReader txtFile2 = new FileReader(pathTOic);
+			FileReader txtFile2 = new FileReader(pathToIC);
 			Lexer scanner = new Lexer(txtFile2);
 			Parser parser = new Parser(scanner);
 			ICRoot = (Program) parser.parse().value;
-			System.out.println("Parsed " + pathTOic + " successfully!");
+			System.out.println("Parsed " + pathToIC + " successfully!");
 		} catch (Exception e) {
 			System.err.println(e.getMessage());
 			return;
@@ -116,7 +118,7 @@ public class Compiler {
 			TypeTableBuilderVisitor t = new TypeTableBuilderVisitor();
 			t.visit(ICRoot);
 			
-			Visitor s = new SymbolTableBuilder(pathTOic);
+			Visitor s = new SymbolTableBuilder(pathToIC);
 			s.visit(ICRoot);
 
 			TypeCheckVisitor tc = new TypeCheckVisitor();
@@ -136,7 +138,7 @@ public class Compiler {
 		if (print_ast) {
 			/* true - prints the tree with tabs
 			 * false - prints the tree without tabs */
-			PrettyPrinter printer = new PrettyPrinter(pathTOic, true);
+			PrettyPrinter printer = new PrettyPrinter(pathToIC, true);
 			System.out.println(ICRoot.accept(printer)+"\n");//print the AST
 		}
 		
@@ -144,13 +146,34 @@ public class Compiler {
 			SymbolTablePrint pr = new SymbolTablePrint(ICRoot);
 			pr.printSymbolTable();//print the Symbol Table
 			
-			System.out.println(TypeTable.getString(pathTOic));//print the Type Table
+			System.out.println(TypeTable.getString(pathToIC));//print the Type Table
 		}
 		
 		if (print_lir) {
-			// TODO : print to file
-			Visitor v = new TranslationVisitor();
-			System.out.println((String)ICRoot.accept(v));
+			try{
+				int beginIndex = pathToIC.lastIndexOf("\\");
+				beginIndex = beginIndex == -1 ? pathToIC.lastIndexOf("/") : beginIndex;
+				String pathToLir = pathToIC.substring(beginIndex + 1, pathToIC.lastIndexOf("."));
+				pathToLir = pathToLir + ".lir";
+				
+				// Create file 
+				FileWriter fstream = new FileWriter(pathToLir);
+				BufferedWriter out = new BufferedWriter(fstream);
+				
+				Visitor v = new TranslationVisitor();
+				String lirOutput = (String)ICRoot.accept(v);
+				out.write(lirOutput);
+				
+				// TODO : delete this
+				System.out.println(lirOutput);
+				
+				// Close the output stream
+				out.close();
+			} catch (Exception e) {
+				System.err.println("Error: " + e.getMessage());
+			}
+			
+			
 		}
 	}
 }

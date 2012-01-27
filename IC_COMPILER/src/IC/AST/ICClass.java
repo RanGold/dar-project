@@ -154,7 +154,7 @@ public class ICClass extends ASTNode {
 				fieldCounter++;
 			}
 		}	
-		lirSize = (this.methodToOffset.size() + this.fieldToOffset.size() + 1) * 4;
+		lirSize = (this.fieldToOffset.size() + 1) * 4;
 	}
 	
 	public int GetClassSize(){
