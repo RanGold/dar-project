@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import IC.SymbolTables.SymbolTable;
+
 /**
  * Class declaration AST node.
  * 
@@ -104,6 +106,12 @@ public class ICClass extends ASTNode {
 	
 	public Map <String,Integer> getMethodsOffsets(){
 		return this.methodToOffset;
+	}
+	
+	@Override
+	public void setenclosingScope(SymbolTable enclosingScope) {
+		super.setenclosingScope(enclosingScope);
+		enclosingScope.setContainer(this);
 	}
 	
 	private void copyMyOffset(Map<String, Integer> methods, Map<String, Integer> fields) {
