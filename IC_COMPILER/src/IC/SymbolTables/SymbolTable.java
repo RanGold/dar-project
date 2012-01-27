@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import IC.AST.ASTNode;
+import IC.AST.ICClass;
 import IC.SemanticChecks.SemanticError;
 
 public class SymbolTable {
@@ -19,7 +19,7 @@ public class SymbolTable {
 	private List<SymbolTable> children;
 	private static int idCounter = 1;
 	private int symbolId;
-	private ASTNode container;
+	private ICClass container;
 	
 	private static synchronized int getNextID() {
 		return idCounter++;
@@ -107,11 +107,11 @@ public class SymbolTable {
 		return id;
 	}
 
-	public void setContainer(ASTNode container) {
+	public void setContainer(ICClass container) {
 		this.container = container;
 	}
 
-	public ASTNode getContainer() {
+	public ICClass getContainer() {
 		return container;
 	}
 
