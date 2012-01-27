@@ -22,7 +22,7 @@ import IC.Types.TypeTableBuilderVisitor;
 public class Compiler {
 
 	public static void main(String[] args) {
-		boolean parse_libic = false, print_ast = false, seen_ICpath = false, dump_symtab = false;
+		boolean parse_libic = false, print_ast = false, seen_ICpath = false, dump_symtab = false, print_lir = false;
 		String pathTOlibic = "libic.sig", pathTOic = null;
 
 		if ((args.length == 0) || (args.length > 4)) {
@@ -57,6 +57,12 @@ public class Compiler {
 					return;
 				}
 				dump_symtab = true;
+			} else if (args[i].equals("-print-lir")) {
+				if (print_lir) {
+					System.err.println("can't use the -print-lir flag more than once");
+					return;
+				}
+				print_lir = true;
 			} else {
 				if (seen_ICpath) {
 					System.err.println("Usage: java IC.Compiler <file.ic> [-L</path/to/libic.sig>] [-print-ast] [-dump-symtab]");
@@ -133,17 +139,18 @@ public class Compiler {
 			PrettyPrinter printer = new PrettyPrinter(pathTOic, true);
 			System.out.println(ICRoot.accept(printer)+"\n");//print the AST
 		}
-		if (dump_symtab){	
+		
+		if (dump_symtab) {	
 			SymbolTablePrint pr = new SymbolTablePrint(ICRoot);
 			pr.printSymbolTable();//print the Symbol Table
 			
 			System.out.println(TypeTable.getString(pathTOic));//print the Type Table
 		}
 		
-		
-		
-		
-		Visitor v = new TranslationVisitor();
-		System.out.println((String)ICRoot.accept(v));
+		if (print_lir) {
+			// TODO : print to file
+			Visitor v = new TranslationVisitor();
+			System.out.println((String)ICRoot.accept(v));
+		}
 	}
 }

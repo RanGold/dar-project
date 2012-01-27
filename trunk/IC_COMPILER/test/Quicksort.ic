@@ -36,15 +36,15 @@ class Quicksort {
 
     return j;
     }
-    
+    /*
     void over(Quicksort q, F f) {
     }
     
     static void overs(Quicksort q, F f) {
     }
-
+	*/
     void quicksort(int low, int high) {
-    main(new string[0]);
+    //main(new string[0]);
     if (low < high) {
         int mid = partition(low, high);
         quicksort(low, mid);
@@ -94,7 +94,7 @@ class Quicksort {
     s.printArray();
     }
 }
-
+/*
 class F extends Quicksort {
 	Quicksort qs;
 	int[] foo() {
@@ -131,3 +131,4 @@ class F extends Quicksort {
 		return f.a;
 	}
 }
+*/

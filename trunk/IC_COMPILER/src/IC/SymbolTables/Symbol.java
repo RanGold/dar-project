@@ -61,6 +61,7 @@ public class Symbol {
 			break;
 		case VAR:
 			s = "v" + s; 
+			break;
 		default: 
 			this.distinctId = id;
 			return;
