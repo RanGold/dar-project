@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Stack;
 
-import IC.LiteralTypes;
 import IC.AST.ArrayLocation;
 import IC.AST.Assignment;
 import IC.AST.Break;
@@ -107,10 +106,6 @@ public class TranslationVisitor implements Visitor {
 		return methodLabel;
 	}
 	
-	private String getMethodLabel(String className, String methodName){
-		return this.getMethodLabel(nameToClass.get(className), methodName);
-	}
-	
 	// checks it its a main function
 	private boolean checkMain(Method method){
 		
@@ -140,21 +135,26 @@ public class TranslationVisitor implements Visitor {
 	
 	private NodeLirTrans loadGeneric(Expression expression){
 		NodeLirTrans expTrs = (NodeLirTrans) expression.accept(this);
-		String resultRegister = RegisterPool.getRegister();
-		StringBuilder s = new StringBuilder();
-		s.append(expTrs.codeTrans);
-		if (expTrs.resultRegister.contains("[")) {
-			s.append("MoveArray ");
+		String resultRegister = null;
+		StringBuilder sb = new StringBuilder();
+		sb.append(expTrs.codeTrans);
+		
+		switch (expTrs.type) {
+		case Register:
+			return new NodeLirTrans(sb.toString(),expTrs.result);
+		case ArrayLocation:
+			sb.append("MoveArray ");
+			resultRegister = RegisterPool.getRegister();
+			break;
+		case FieldLocation:
+			sb.append("MoveField ");
+			resultRegister = RegisterPool.getRegister();
+			break;
 		}
-		else if (expTrs.resultRegister.contains(".")) {
-			s.append("MoveField ");
-		}
-		else {
-			s.append("Move ");
-		}
-		s.append(expTrs.resultRegister + ",");
-		s.append(resultRegister + "\r\n");
-		return new NodeLirTrans(s.toString(),resultRegister);
+		
+		sb.append(expTrs.result + ",");
+		sb.append(resultRegister + "\r\n");
+		return new NodeLirTrans(sb.toString(),resultRegister);
 	}
 	
 	@Override
@@ -239,25 +239,25 @@ public class TranslationVisitor implements Visitor {
 				}
 			}
 
-			return new NodeLirTrans(classInstructions.toString(), "");
+			return new NodeLirTrans(classInstructions.toString());
 		}
 		
-		return new NodeLirTrans("", "");
+		return new NodeLirTrans("");
 	}
 
 	@Override
 	public Object visit(Field field) {
 		return null;
 	}
-
 	
 	private NodeLirTrans methodVisit(Method method){
 		StringBuilder sb = new StringBuilder();
-		for (Statement s : method.getStatements()){
-			sb.append(((NodeLirTrans)s.accept(this)).codeTrans);
+		for (Statement stmt : method.getStatements()) {
+			sb.append("# line: " + stmt.getLine() + "\r\n");
+			sb.append(((NodeLirTrans)stmt.accept(this)).codeTrans);
 		}
 		sb.append("Return 0 \r\n");
-		return new NodeLirTrans(sb.toString(), "");
+		return new NodeLirTrans(sb.toString());
 	}
 	
 	@Override
@@ -292,14 +292,37 @@ public class TranslationVisitor implements Visitor {
 
 	@Override
 	public Object visit(Assignment assignment) {
-		// TODO Auto-generated method stub
-		return null;
+		NodeLirTrans locTrs = (NodeLirTrans)assignment.getVariable().accept(this);
+		NodeLirTrans asgnTrs = loadGeneric(assignment.getAssignment());
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append(locTrs.codeTrans);
+		sb.append(asgnTrs.codeTrans);
+		
+		switch (locTrs.type) {
+		case Register:
+			sb.append("Move ");
+			break;
+		case ArrayLocation:
+			sb.append("MoveArray ");
+			break;
+		case FieldLocation:
+			sb.append("MoveField ");
+			break;
+		}
+		
+		sb.append(asgnTrs.result);
+		sb.append(",");
+		sb.append(locTrs.result);
+		sb.append("\r\n");
+		
+		return new NodeLirTrans(sb.toString());
 	}
 
 	@Override
 	public Object visit(CallStatement callStatement) {
-		// TODO Auto-generated method stub
-		return null;
+		NodeLirTrans trs = loadGeneric(callStatement.getCall());
+		return new NodeLirTrans(trs.codeTrans);
 	}
 
 	@Override
@@ -308,12 +331,12 @@ public class TranslationVisitor implements Visitor {
 		if (returnStatement.hasValue()) {
 			NodeLirTrans valueTrs = loadGeneric(returnStatement.getValue());
 			s.append(valueTrs.codeTrans);
-			s.append("Return " + valueTrs.resultRegister + "\r\n");
+			s.append("Return " + valueTrs.result + "\r\n");
 		} else {
 			s.append("Return 0\r\n");
 		}
 		
-		return new NodeLirTrans(s.toString(), "");
+		return new NodeLirTrans(s.toString());
 	}
 
 	@Override
@@ -322,18 +345,18 @@ public class TranslationVisitor implements Visitor {
 		int id = getNextId();
 		NodeLirTrans condTrs = loadGeneric(ifStatement.getCondition());
 		s.append(condTrs.codeTrans + "\r\n");
-		s.append("Compare 0," + condTrs.resultRegister + "\r\n");
-		s.append("JumpTrue _false_" + id + "\r\n");
+		s.append("Compare 0," + condTrs.result + "\r\n");
+		s.append("JumpTrue _false_if_" + id + "\r\n");
 		NodeLirTrans operTrans = (NodeLirTrans) ifStatement.getOperation().accept(this);
 		s.append(operTrans.codeTrans);
-		s.append("Jump _end_" + id + "\r\n");
-		s.append("_false_" + id + ":\r\n");
+		s.append("Jump _end_if_" + id + "\r\n");
+		s.append("_false_if_" + id + ":\r\n");
 		if (ifStatement.hasElse()){
 			NodeLirTrans elseTrans = (NodeLirTrans) ifStatement.getElseOperation().accept(this);
 			s.append(elseTrans.codeTrans);
 		}
-		s.append("end_" + id + "\r\n");
-		return new NodeLirTrans(s.toString(), "");
+		s.append("end_if_" + id + ":\r\n");
+		return new NodeLirTrans(s.toString());
 	}
 
 	@Override
@@ -343,26 +366,26 @@ public class TranslationVisitor implements Visitor {
 		whileLables.push(id);
 		s.append("_while_" + id + ":\r\n");
 		NodeLirTrans condTrs = loadGeneric(whileStatement.getCondition());
-		s.append(condTrs.codeTrans + "\r\n");
-		s.append("Compare 0," + condTrs.resultRegister + "\r\n");
+		s.append(condTrs.codeTrans);
+		s.append("Compare 0," + condTrs.result + "\r\n");
 		s.append("JumpTrue _end_while_" + id + "\r\n");
 		NodeLirTrans operTrs = (NodeLirTrans)whileStatement.getOperation().accept(this);
 		s.append(operTrs.codeTrans);
 		s.append("Jump _while_" + id + "\r\n");
-		s.append("_end_while_" + id + "\r\n");
+		s.append("_end_while_" + id + ":\r\n");
 		whileLables.pop();
 		
-		return new NodeLirTrans(s.toString(), ""); 
+		return new NodeLirTrans(s.toString()); 
 	}
 
 	@Override
 	public Object visit(Break breakStatement) {
-		return new NodeLirTrans("Jump _end_while_" + whileLables.peek(), ""); 
+		return new NodeLirTrans("Jump _end_while_" + whileLables.peek() + "\r\n"); 
 	}
 
 	@Override
 	public Object visit(Continue continueStatement) {
-		return new NodeLirTrans("Jump _while_" + whileLables.peek(), ""); 
+		return new NodeLirTrans("Jump _while_" + whileLables.peek() + "\r\n"); 
 	}
 
 	@Override
@@ -372,7 +395,7 @@ public class TranslationVisitor implements Visitor {
 			NodeLirTrans sTrans = (NodeLirTrans) stmt.accept(this);
 			sb.append(sTrans.codeTrans + "\r\n");
 		}
-		return new NodeLirTrans(sb.toString(),"");
+		return new NodeLirTrans(sb.toString());
 	}
 
 	@Override
@@ -382,11 +405,11 @@ public class TranslationVisitor implements Visitor {
 			NodeLirTrans init = loadGeneric(localVariable.getInitValue());
 			sb.append(init.codeTrans);
 			sb.append("Move ");
-			sb.append(init.resultRegister + ",");
+			sb.append(init.result + ",");
 			sb.append(localVariable.getEnclosingScope().getEntry(localVariable.getName()).getDistinctId() + "\r\n");
 		}
 		
-		return new NodeLirTrans(sb.toString(), "");
+		return new NodeLirTrans(sb.toString());
 	}
 
 	@Override
@@ -399,20 +422,24 @@ public class TranslationVisitor implements Visitor {
 			// TODO : check if all expression have enclosingType
 			ICClass classInstance = ((ClassType)location.getLocation().getEnclosingType()).getICClass();
 			int varLocationNum = classInstance.getFieldOffset(location.getName()); 
-			String fieldId = expTrs1.resultRegister + "." + varLocationNum + "\r\n";
-			return new NodeLirTrans(s.toString(), fieldId);
+			String fieldId = expTrs1.result + "." + varLocationNum;
+			return new NodeLirTrans(s.toString(), fieldId, ResultType.FieldLocation);
 		} else {
 			if (location.getEnclosingScope().getEntryRecursive(location.getName()).getKind().equals(Kind.FIELD)) {
 				String classLocationReg = RegisterPool.getRegister();
 				s.append("Move this," + classLocationReg);
+				s.append("\r\n");
 				
 				ICClass classInstance = nameToClass.get(location.getEnclosingScope().getVariableScope(location.getName()).getID());
 				int varLocationNum = classInstance.getFieldOffset(location.getName()); 
-				String fieldId = classLocationReg + "." + varLocationNum + "\r\n";
-				return new NodeLirTrans(s.toString(), fieldId);
+				String fieldId = classLocationReg + "." + varLocationNum;
+				return new NodeLirTrans(s.toString(), fieldId, ResultType.FieldLocation);
 			} else {
 				String resReg = RegisterPool.getRegister();
-				s.append("Move " + location.getEnclosingScope().getEntryRecursive(location.getName()).getDistinctId() + "," + resReg);
+				s.append("Move ");
+				s.append(location.getEnclosingScope().getEntryRecursive(location.getName()).getDistinctId());
+				s.append(",");
+				s.append(resReg + "\r\n");
 				return new NodeLirTrans(s.toString(),resReg);
 			}
 		}
@@ -425,19 +452,59 @@ public class TranslationVisitor implements Visitor {
 		StringBuilder s = new StringBuilder();
 		s.append(expTrs1.codeTrans);
 		s.append(expTrs2.codeTrans);
-		String arraySymbol = expTrs1.resultRegister + "[" + expTrs2.resultRegister + "]\r\n";
-		return new NodeLirTrans(s.toString(),arraySymbol);
+		String arraySymbol = expTrs1.result + "[" + expTrs2.result + "]";
+		return new NodeLirTrans(s.toString(), arraySymbol, ResultType.ArrayLocation);
 	}
 
-	public NodeLirTrans visitCall(Call call, Method method) {
-		return null;
+	public NodeLirTrans visitCall(Call call, ICClass icClass) {
+		ICClass containingClass = icClass.getEnclosingScope().getVariableScope(call.getName()).getContainer();
+		
+		Method methodSig = null;
+		for (Method method : containingClass.getMethods()) {
+			if (method.getName().equals(call.getName())) {
+				methodSig = method;
+				break;
+			}
+		}
+		
+		StringBuilder expressions = new StringBuilder();
+		StringBuilder results = new StringBuilder();
+		int argCounter = 0;
+		
+		for (Expression arg : call.getArguments()) {
+			NodeLirTrans argTrs = loadGeneric(arg);
+			expressions.append(argTrs.codeTrans);
+			
+			String curFormal = methodSig.getEnclosingScope().getEntry(methodSig.getFormals().get(argCounter).getName()).getDistinctId();
+			results.append(curFormal);
+			results.append("=");
+			results.append(argTrs.result);
+			results.append(",");
+			argCounter++;
+		}
+		
+		String resultsStr = results.length() > 0 ? results.substring(0, results.length() - 1) : "";
+		
+		return new NodeLirTrans(expressions.toString(), resultsStr);
 	}
 	
 	@Override
 	public Object visit(StaticCall call) {
-		String methodLabel = getMethodLabel(call.getClassName(), call.getName());
-		// TODO Auto-generated method stub
-		return null;
+		ICClass icClass = nameToClass.get(call.getClassName());
+		String methodLabel = getMethodLabel(icClass, call.getName());
+		
+		StringBuilder sb = new StringBuilder();
+		NodeLirTrans params = visitCall(call, icClass);
+		sb.append(params.codeTrans);
+		sb.append("StaticCall ");
+		sb.append(methodLabel);
+		sb.append("(");
+		sb.append(params.result);
+		sb.append("),");
+		String resultRegister = RegisterPool.getRegister();
+		sb.append(resultRegister + "\r\n");
+
+		return new NodeLirTrans(sb.toString(), resultRegister);
 	}
 
 	@Override
@@ -451,20 +518,28 @@ public class TranslationVisitor implements Visitor {
 		} else {
 			NodeLirTrans locTrns = loadGeneric(call.getLocation());
 			sb.append(locTrns.codeTrans);
-			location = locTrns.resultRegister;
+			location = locTrns.result;
 			icClass = ((ClassType)call.getLocation().getEnclosingType()).getICClass();
 		}
 		
 		String methodLabel = location + "." + icClass.getMethodOffset(call.getName());
 		
-		// TODO Auto-generated method stub
-		return null;
+		NodeLirTrans params = visitCall(call, icClass);
+		sb.append(params.codeTrans);
+		sb.append("VirtualCall ");
+		sb.append(methodLabel);
+		sb.append("(");
+		sb.append(params.result);
+		sb.append("),");
+		String resultRegister = RegisterPool.getRegister();
+		sb.append(resultRegister + "\r\n");
+		
+		return new NodeLirTrans(sb.toString(), resultRegister);
 	}
 
 	@Override
 	public Object visit(This thisExpression) {
-		// TODO Auto-generated method stub
-		return null;
+		return new NodeLirTrans("", "this");
 	}
 
 	@Override
@@ -484,9 +559,9 @@ public class TranslationVisitor implements Visitor {
 		NodeLirTrans expTrs = loadGeneric(newArray.getSize());
 		StringBuilder s = new StringBuilder();
 		s.append(expTrs.codeTrans);
-		s.append("Library __allocateArray(" + expTrs.resultRegister + "),");
-		s.append(expTrs.resultRegister + "\r\n");
-		return new NodeLirTrans(s.toString(), expTrs.resultRegister);
+		s.append("Library __allocateArray(" + expTrs.result + "),");
+		s.append(expTrs.result + "\r\n");
+		return new NodeLirTrans(s.toString(), expTrs.result);
 	}
 
 	@Override
@@ -495,9 +570,9 @@ public class TranslationVisitor implements Visitor {
 		StringBuilder s = new StringBuilder();
 		s.append(expTrs.codeTrans);
 		s.append("ArrayLength ");
-		s.append(expTrs.resultRegister + ",");
-		s.append(expTrs.resultRegister + "\r\n");
-		return new NodeLirTrans(s.toString(), expTrs.resultRegister);
+		s.append(expTrs.result + ",");
+		s.append(expTrs.result + "\r\n");
+		return new NodeLirTrans(s.toString(), expTrs.result);
 	}
 
 	@Override
@@ -507,43 +582,42 @@ public class TranslationVisitor implements Visitor {
 		StringBuilder s = new StringBuilder();
 		s.append(expTrs1.codeTrans);
 		s.append(expTrs2.codeTrans);
-		s.append("# Mathematical binary operation\r\n");
 		switch(binaryOp.getOperator()){
 		case PLUS:
 			// TODO : check all expressions have enclosing types
 			if (binaryOp.getFirstOperand().getEnclosingType().equals(TypeTable.stringType)){
 				s.append("Library __stringCat(");
-				s.append(expTrs1.resultRegister+",");
-				s.append(expTrs2.resultRegister+"),");
-				s.append(expTrs2.resultRegister);
-				return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+				s.append(expTrs1.result+",");
+				s.append(expTrs2.result+"),");
+				s.append(expTrs2.result);
+				return new NodeLirTrans(s.toString(), expTrs2.result);
 			}
 			else{
 				s.append("Add ");
-				s.append(expTrs1.resultRegister+",");
-				s.append(expTrs2.resultRegister+"\r\n");
-				return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+				s.append(expTrs1.result+",");
+				s.append(expTrs2.result+"\r\n");
+				return new NodeLirTrans(s.toString(), expTrs2.result);
 			}
 		case MINUS:
 			s.append("Sub ");
-			s.append(expTrs1.resultRegister+",");
-			s.append(expTrs2.resultRegister+"\r\n");
-			return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+			s.append(expTrs1.result+",");
+			s.append(expTrs2.result+"\r\n");
+			return new NodeLirTrans(s.toString(), expTrs2.result);
 		case MULTIPLY:
 			s.append("Mul ");
-			s.append(expTrs1.resultRegister+",");
-			s.append(expTrs2.resultRegister+"\r\n");
-			return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+			s.append(expTrs1.result+",");
+			s.append(expTrs2.result+"\r\n");
+			return new NodeLirTrans(s.toString(), expTrs2.result);
 		case DIVIDE:
 			s.append("Div ");
-			s.append(expTrs1.resultRegister+",");
-			s.append(expTrs2.resultRegister+"\r\n");
-			return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+			s.append(expTrs1.result+",");
+			s.append(expTrs2.result+"\r\n");
+			return new NodeLirTrans(s.toString(), expTrs2.result);
 		case MOD:
 			s.append("Mod ");
-			s.append(expTrs1.resultRegister+",");
-			s.append(expTrs2.resultRegister+"\r\n");
-			return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+			s.append(expTrs1.result+",");
+			s.append(expTrs2.result+"\r\n");
+			return new NodeLirTrans(s.toString(), expTrs2.result);
 		default: 
 			return null;
 		}
@@ -556,95 +630,105 @@ public class TranslationVisitor implements Visitor {
 		StringBuilder s = new StringBuilder();
 		s.append(expTrs1.codeTrans);
 		s.append(expTrs2.codeTrans);
-		s.append("# Logical binary operation\r\n");
 		switch(binaryOp.getOperator()){
 		case LAND:
 			s.append("And ");
-			s.append(expTrs1.resultRegister+",");
-			s.append(expTrs2.resultRegister+"\r\n");
-			return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+			s.append(expTrs1.result+",");
+			s.append(expTrs2.result+"\r\n");
+			return new NodeLirTrans(s.toString(), expTrs2.result);
 		case LOR:
 			s.append("Or ");
-			s.append(expTrs1.resultRegister+",");
-			s.append(expTrs2.resultRegister+"\r\n");
-			return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+			s.append(expTrs1.result+",");
+			s.append(expTrs2.result+"\r\n");
+			return new NodeLirTrans(s.toString(), expTrs2.result);
 		case LT:
 			s.append("Compare ");
-			s.append(expTrs1.resultRegister+",");
-			s.append(expTrs2.resultRegister+"\r\n");
+			s.append(expTrs1.result+",");
+			s.append(expTrs2.result+"\r\n");
 			s.append("JumpL ");
 			break;
 		case LTE:
 			s.append("Compare ");
-			s.append(expTrs1.resultRegister+",");
-			s.append(expTrs2.resultRegister+"\r\n");
+			s.append(expTrs1.result+",");
+			s.append(expTrs2.result+"\r\n");
 			s.append("JumpLE ");
 			break;
 		case GT:
 			s.append("Compare ");
-			s.append(expTrs1.resultRegister+",");
-			s.append(expTrs2.resultRegister+"\r\n");
+			s.append(expTrs1.result+",");
+			s.append(expTrs2.result+"\r\n");
 			s.append("JumpG ");
 			break;
 		case GTE:
 			s.append("Compare ");
-			s.append(expTrs1.resultRegister+",");
-			s.append(expTrs2.resultRegister+"\r\n");
+			s.append(expTrs1.result+",");
+			s.append(expTrs2.result+"\r\n");
 			s.append("JumpGE ");
 			break;
 		case EQUAL:
 			s.append("Compare ");
-			s.append(expTrs1.resultRegister+",");
-			s.append(expTrs2.resultRegister+"\r\n");
+			s.append(expTrs1.result+",");
+			s.append(expTrs2.result+"\r\n");
 			s.append("JumpTrue ");
 			break;
 		case NEQUAL:
 			s.append("Compare ");
-			s.append(expTrs1.resultRegister+",");
-			s.append(expTrs2.resultRegister+"\r\n");
+			s.append(expTrs1.result+",");
+			s.append(expTrs2.result+"\r\n");
 			s.append("JumpFalse ");
 		}
 		int id = getNextId();
-		s.append("_True_" + id + "\r\n");
-		s.append("Move 0," + expTrs2.resultRegister + "\r\n");
-		s.append("Jump " + "_End_Boolean_" + id);
-		s.append("_True_" + id + ":\r\n"); //if true
-		s.append("Move 1," + expTrs2.resultRegister + "\r\n");	
-		s.append("_End_Boolean_" + id + ":\r\n");
-		return new NodeLirTrans(s.toString(), expTrs2.resultRegister);
+		s.append("_true_" + id + "\r\n");
+		s.append("Move 0," + expTrs2.result + "\r\n");
+		s.append("Jump " + "_end_boolean_" + id + "\r\n");
+		s.append("_true_" + id + ":\r\n"); //if true
+		s.append("Move 1," + expTrs2.result + "\r\n");	
+		s.append("_end_boolean_" + id + ":\r\n");
+		return new NodeLirTrans(s.toString(), expTrs2.result);
 	}
 
 	@Override
 	public Object visit(MathUnaryOp unaryOp) {
 		NodeLirTrans expTrs = loadGeneric(unaryOp.getOperand());
 		StringBuilder s = new StringBuilder();
-		s.append("# Mathematical unary operation\r\n");
 		s.append(expTrs.codeTrans);
 		s.append("Mul -1,");
-		s.append(expTrs.resultRegister + "\r\n");
-		return new NodeLirTrans(s.toString(), expTrs.resultRegister);
+		s.append(expTrs.result + "\r\n");
+		return new NodeLirTrans(s.toString(), expTrs.result);
 	}
 
 	@Override
 	public Object visit(LogicalUnaryOp unaryOp) {
 		NodeLirTrans expTrs = loadGeneric(unaryOp.getOperand());
 		StringBuilder s = new StringBuilder();
-		s.append("# Logical unary operation\r\n");
 		s.append(expTrs.codeTrans);
 		s.append("Not ");//TODO neg?
-		s.append(expTrs.resultRegister + "\r\n");
-		return new NodeLirTrans(s.toString(), expTrs.resultRegister);
+		s.append(expTrs.result + "\r\n");
+		return new NodeLirTrans(s.toString(), expTrs.result);
 	}
 
 	@Override
 	public Object visit(Literal literal) {
 		String literalIdentifier = null;
-		if (literal.getType() == LiteralTypes.STRING) {
-			// TODO : check if identifier is with "" 
-			literalIdentifier = getStringLiteralName(literal.getValue().toString());
-		} else {
+		switch (literal.getType()) {
+		case FALSE:
+			literalIdentifier = "0";
+			break;
+		case INTEGER:
 			literalIdentifier = literal.getValue().toString();
+			break;
+		case NULL:
+			// TODO : ?
+			literalIdentifier = "0";
+			break;
+		case STRING:
+			literalIdentifier = getStringLiteralName(literal.getValue().toString());
+			break;
+		case TRUE:
+			literalIdentifier = "1";
+			break;
 		}
+
 		StringBuilder s = new StringBuilder();
 		s.append("Move ");
 		s.append(literalIdentifier + ",");
