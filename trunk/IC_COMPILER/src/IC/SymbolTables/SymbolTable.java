@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import IC.AST.ASTNode;
 import IC.SemanticChecks.SemanticError;
-import IC.Types.Type;
 
 public class SymbolTable {
 
@@ -19,8 +19,7 @@ public class SymbolTable {
 	private List<SymbolTable> children;
 	private static int idCounter = 1;
 	private int symbolId;
-	
-	
+	private ASTNode container;
 	
 	private static synchronized int getNextID() {
 		return idCounter++;
@@ -106,6 +105,14 @@ public class SymbolTable {
 	
 	public String getID(){
 		return id;
+	}
+
+	public void setContainer(ASTNode container) {
+		this.container = container;
+	}
+
+	public ASTNode getContainer() {
+		return container;
 	}
 
 	private String stmtBlockLocation(SymbolTable st){

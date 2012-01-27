@@ -150,11 +150,11 @@ public class VarInitVisitor implements Visitor {
 			}
 		}
 		
-		Symbol varLocSym = varLoc.getenclosingScope().getEntry(varLoc.getName());
+		Symbol varLocSym = varLoc.getEnclosingScope().getEntry(varLoc.getName());
 		
 		if (!varLoc.isExternal() && varLocSym.getKind() == Kind.VAR) {
-			boolean isPrevInit = varLoc.getenclosingScope().getEntryRecursive(varLoc.getName()).isInitialized();
-			varLoc.getenclosingScope().getEntryRecursive(varLoc.getName()).setInitialized(true);
+			boolean isPrevInit = varLoc.getEnclosingScope().getEntryRecursive(varLoc.getName()).isInitialized();
+			varLoc.getEnclosingScope().getEntryRecursive(varLoc.getName()).setInitialized(true);
 			if (this.curIf != null) {
 				if (ifState.get(curIf)) {
 					if (this.ifAssignments.get(curIf).indexOf(new VarRec(varLoc.getName())) == -1) {
@@ -203,7 +203,7 @@ public class VarInitVisitor implements Visitor {
 		
 		for (VarRec var : ifAssignments.get(ifStatement)) {
 			if (var.ifInit && !var.prevInit) {
-				ifStatement.getenclosingScope().getEntryRecursive(var.name).setInitialized(false);
+				ifStatement.getEnclosingScope().getEntryRecursive(var.name).setInitialized(false);
 			}
 		}
 		
@@ -216,7 +216,7 @@ public class VarInitVisitor implements Visitor {
 		
 		for (VarRec var : ifAssignments.get(ifStatement)) {
 			if (var.ifInit && !var.prevInit) {
-				ifStatement.getenclosingScope().getEntryRecursive(var.name).setInitialized(true);
+				ifStatement.getEnclosingScope().getEntryRecursive(var.name).setInitialized(true);
 			}
 		}
 		
@@ -281,7 +281,7 @@ public class VarInitVisitor implements Visitor {
 			localVariable.getInitValue().accept(this);
 		}
 		
-		Symbol locSym = localVariable.getenclosingScope().getEntryRecursive(localVariable.getName());
+		Symbol locSym = localVariable.getEnclosingScope().getEntryRecursive(localVariable.getName());
 		locSym.setInitialized(localVariable.hasInitValue());
 		return true;
 	}
@@ -290,7 +290,7 @@ public class VarInitVisitor implements Visitor {
 	public Object visit(VariableLocation location) {	
 		
 		if (!location.isExternal()) {
-			Symbol locSym = location.getenclosingScope().getEntry(location.getName());
+			Symbol locSym = location.getEnclosingScope().getEntry(location.getName());
 			if (!(locSym.getKind() == Kind.FIELD || locSym.getKind() == Kind.FORMAL || (locSym.getKind() == Kind.VAR && locSym.isInitialized()))) {
 				System.err.println("Semantic warning at line " + location.getLine() + ": Use of uninitialized local varibale " + location.getName());
 			}

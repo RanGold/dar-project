@@ -18,6 +18,6 @@ public class SymbolTablePrint {
 	}
 	
 	public void printSymbolTable(){
-		printRecursion(root.getenclosingScope());
+		printRecursion(root.getEnclosingScope());
 	}
 }

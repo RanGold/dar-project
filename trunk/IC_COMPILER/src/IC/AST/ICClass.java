@@ -106,7 +106,7 @@ public class ICClass extends ASTNode {
 		return this.methodToOffset;
 	}
 	
-	public void copyMyOffset(Map<String, Integer> methods, Map<String, Integer> fields){//private
+	private void copyMyOffset(Map<String, Integer> methods, Map<String, Integer> fields) {
 		for (Entry<String, Integer> entry: this.methodToOffset.entrySet()){
 			methods.put(entry.getKey(), entry.getValue());
 		}
@@ -115,22 +115,21 @@ public class ICClass extends ASTNode {
 		}
 	}
 	
-	
-	public void initOffsets(ICClass father){
+	public void initOffsets(ICClass superClass){
 		this.methodToOffset = new LinkedHashMap<String, Integer>();
 		this.fieldToOffset = new LinkedHashMap<String, Integer>();
 		int methodCounter = 0;
 		int fieldCounter = 1;
 		
-		//get fathers fields and methods
-		if (father!=null){
-			father.copyMyOffset(this.methodToOffset, this.fieldToOffset);
-			Integer[] arr = methodToOffset.values().toArray(new Integer[0]); 
+		// get fathers fields and methods
+		if (superClass != null) {
+			superClass.copyMyOffset(this.methodToOffset, this.fieldToOffset);
+			Integer[] arr = methodToOffset.values().toArray(new Integer[0]);
 			Arrays.sort(arr);
 			methodCounter = arr[arr.length - 1] + 1;
 			arr = fieldToOffset.values().toArray(new Integer[0]);
 			Arrays.sort(arr);
-			fieldCounter = arr[arr.length -1] + 1;
+			fieldCounter = arr[arr.length - 1] + 1;
 		}
 		
 		//enter the class fields and methods

@@ -41,12 +41,13 @@ public abstract class ASTNode {
 	}
 	
 	/** returns symbol table of enclosing scope **/
-	public SymbolTable getenclosingScope() {
+	public SymbolTable getEnclosingScope() {
 		return enclosingScope;
 	}
 
 	public void setenclosingScope(SymbolTable enclosingScope) {
-		this.enclosingScope =  enclosingScope;
+		this.enclosingScope = enclosingScope;
+		enclosingScope.setContainer(this);
 	}
 	
 	public IC.Types.Type getEnclosingType() {
