@@ -61,7 +61,9 @@ public class Symbol {
 			break;
 		case VAR:
 			s = "v" + s; 
-		default: throw new RuntimeException("Should not get here");//TODO - delete
+		default: 
+			this.distinctId = id;
+			return;
 		}
 		
 		this.distinctId = s + id;

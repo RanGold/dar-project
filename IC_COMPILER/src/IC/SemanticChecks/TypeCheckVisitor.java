@@ -132,7 +132,7 @@ public class TypeCheckVisitor implements Visitor {
 			returnValueType = TypeTable.voidType;
 		}
 		
-		if (!returnValueType.subtypeof(returnStatement.getenclosingScope().getEntryRecursive("$ret").getType())) {
+		if (!returnValueType.subtypeof(returnStatement.getEnclosingScope().getEntryRecursive("$ret").getType())) {
 			throw new SemanticError("Return value type is not a subtype of the method's return value", returnStatement.getLine());
 		}
 		return returnValueType;
@@ -200,7 +200,7 @@ public class TypeCheckVisitor implements Visitor {
 			Type initValueType = (Type) localVariable.getInitValue().accept(this);
 			
 			// check initial value type is sub type of local variable
-			Type localVariableType = localVariable.getenclosingScope()
+			Type localVariableType = localVariable.getEnclosingScope()
 					.getEntry(localVariable.getName()).getType();
 			if (!initValueType.subtypeof(localVariableType)) {
 				throw new SemanticError("Type mismatch - can't assign " + initValueType +
@@ -215,7 +215,7 @@ public class TypeCheckVisitor implements Visitor {
 		
 		if (!location.isExternal()){
 			//if location is not external - we return the value in the symbol table
-			Symbol symb = location.getenclosingScope().getEntryRecursive(location.getName());
+			Symbol symb = location.getEnclosingScope().getEntryRecursive(location.getName());
 			if (symb == null) {
 				//does not exists in method or as class formal
 				throw new SemanticError(location.getName() + " has not been declared" , location.getLine());
@@ -236,7 +236,7 @@ public class TypeCheckVisitor implements Visitor {
 			}
 
 			ICClass cls = ((ClassType)locType).getICClass();
-			Symbol varSym = cls.getenclosingScope().getEntryRecursive(location.getName());
+			Symbol varSym = cls.getEnclosingScope().getEntryRecursive(location.getName());
 			//location is external
 			if (varSym == null) {
 				throw new SemanticError("Identifier " + location.getName()
@@ -289,7 +289,7 @@ public class TypeCheckVisitor implements Visitor {
 	}
 	
 	public Object visit(StaticCall call) {
-		Symbol classSym = call.getenclosingScope().getEntryRecursive(call.getClassName());
+		Symbol classSym = call.getEnclosingScope().getEntryRecursive(call.getClassName());
 		
 		if (classSym == null) {
 			throw new SemanticError("Class " + call.getClassName() + " doesn't exist", call.getLine());
@@ -297,7 +297,7 @@ public class TypeCheckVisitor implements Visitor {
 			throw new SemanticError("Identifier " + call.getClassName() + " is not a class type", call.getLine());
 		} else {
 			ICClass classRef = ((ClassType)classSym.getType()).getICClass();
-			Symbol methodSym = classRef.getenclosingScope().getEntryRecursive(call.getName());
+			Symbol methodSym = classRef.getEnclosingScope().getEntryRecursive(call.getName());
 			if (methodSym == null) {
 				throw new SemanticError("Identifier " + call.getName() + " doesn't exist in class " + call.getClassName(), call.getLine());
 			} else if (methodSym.getKind() != Kind.STATIC_METHOD) {
@@ -313,7 +313,7 @@ public class TypeCheckVisitor implements Visitor {
 	public Object visit(VirtualCall call) {
 		Symbol methodSym = null;
 		if (!call.isExternal()) {
-			methodSym = call.getenclosingScope().getEntryRecursive(call.getName());
+			methodSym = call.getEnclosingScope().getEntryRecursive(call.getName());
 		} else {
 			Type locType = (Type) call.getLocation().accept(this);
 
@@ -321,7 +321,7 @@ public class TypeCheckVisitor implements Visitor {
 				throw new SemanticError("Invalid call", call.getLine());
 			}
 
-			methodSym = ((ClassType) locType).getICClass().getenclosingScope()
+			methodSym = ((ClassType) locType).getICClass().getEnclosingScope()
 					.getEntryRecursive(call.getName());
 		}
 		
@@ -351,7 +351,7 @@ public class TypeCheckVisitor implements Visitor {
 			throw new SemanticError("this expression cannot appear within a static method", thisExpression.getLine());
 		}
 		
-		Type t = thisExpression.getenclosingScope().getEntry("this").getType();
+		Type t = thisExpression.getEnclosingScope().getEntry("this").getType();
 		thisExpression.setEnclosingType(t);
 		return t;
 	}
