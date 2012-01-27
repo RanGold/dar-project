@@ -133,7 +133,7 @@ public class TranslationVisitor implements Visitor {
 		return true;
 	}
 	
-	private NodeLirTrans loadGeneric(Expression expression){
+	private NodeLirTrans loadGeneric(Expression expression, boolean returnMem) {
 		NodeLirTrans expTrs = (NodeLirTrans) expression.accept(this);
 		String resultRegister = null;
 		StringBuilder sb = new StringBuilder();
@@ -141,7 +141,18 @@ public class TranslationVisitor implements Visitor {
 		
 		switch (expTrs.type) {
 		case Register:
-			return new NodeLirTrans(sb.toString(),expTrs.result);
+			return expTrs;
+		case Mem:
+			if (returnMem) {
+				return expTrs;
+			} else {
+				sb.append("Move ");
+				sb.append(expTrs.result);
+				sb.append(",");
+				String resReg = RegisterPool.getRegister();
+				sb.append(resReg + "\r\n");
+				return new NodeLirTrans(sb.toString(), resReg);
+			}
 		case ArrayLocation:
 			sb.append("MoveArray ");
 			resultRegister = RegisterPool.getRegister();
@@ -155,6 +166,10 @@ public class TranslationVisitor implements Visitor {
 		sb.append(expTrs.result + ",");
 		sb.append(resultRegister + "\r\n");
 		return new NodeLirTrans(sb.toString(),resultRegister);
+	}
+	
+	private NodeLirTrans loadGeneric(Expression expression) {
+		return this.loadGeneric(expression, false);
 	}
 	
 	@Override
@@ -189,6 +204,7 @@ public class TranslationVisitor implements Visitor {
 				if (first){
 					lirOutput.append(methodLabel);
 					first = false;
+					continue;
 				}
 				lirOutput.append("," + methodLabel);
 			}
@@ -256,7 +272,10 @@ public class TranslationVisitor implements Visitor {
 			sb.append("# line: " + stmt.getLine() + "\r\n");
 			sb.append(((NodeLirTrans)stmt.accept(this)).codeTrans);
 		}
-		sb.append("Return 0 \r\n");
+		
+		if (!checkMain(method)) {
+			sb.append("Return 0 \r\n");
+		}
 		return new NodeLirTrans(sb.toString());
 	}
 	
@@ -301,6 +320,7 @@ public class TranslationVisitor implements Visitor {
 		
 		switch (locTrs.type) {
 		case Register:
+		case Mem:
 			sb.append("Move ");
 			break;
 		case ArrayLocation:
@@ -435,12 +455,8 @@ public class TranslationVisitor implements Visitor {
 				String fieldId = classLocationReg + "." + varLocationNum;
 				return new NodeLirTrans(s.toString(), fieldId, ResultType.FieldLocation);
 			} else {
-				String resReg = RegisterPool.getRegister();
-				s.append("Move ");
-				s.append(location.getEnclosingScope().getEntryRecursive(location.getName()).getDistinctId());
-				s.append(",");
-				s.append(resReg + "\r\n");
-				return new NodeLirTrans(s.toString(),resReg);
+				String resReg = location.getEnclosingScope().getEntryRecursive(location.getName()).getDistinctId();
+				return new NodeLirTrans(s.toString(), resReg, ResultType.Mem);
 			}
 		}
 	}
@@ -476,8 +492,10 @@ public class TranslationVisitor implements Visitor {
 			expressions.append(argTrs.codeTrans);
 			
 			String curFormal = methodSig.getEnclosingScope().getEntry(methodSig.getFormals().get(argCounter).getName()).getDistinctId();
-			results.append(curFormal);
-			results.append("=");
+			if (!icClass.getName().equals("Library")) {
+				results.append(curFormal);
+				results.append("=");
+			}
 			results.append(argTrs.result);
 			results.append(",");
 			argCounter++;
@@ -496,8 +514,14 @@ public class TranslationVisitor implements Visitor {
 		StringBuilder sb = new StringBuilder();
 		NodeLirTrans params = visitCall(call, icClass);
 		sb.append(params.codeTrans);
-		sb.append("StaticCall ");
-		sb.append(methodLabel);
+		if (call.getClassName().equals("Library")) {
+			sb.append("Library __");
+			sb.append(call.getName());
+		} else {
+			sb.append("StaticCall ");
+			sb.append(methodLabel);
+		}
+		
 		sb.append("(");
 		sb.append(params.result);
 		sb.append("),");
@@ -577,8 +601,8 @@ public class TranslationVisitor implements Visitor {
 
 	@Override
 	public Object visit(MathBinaryOp binaryOp) {
-		NodeLirTrans expTrs1 = loadGeneric(binaryOp.getFirstOperand());
-		NodeLirTrans expTrs2 = loadGeneric(binaryOp.getSecondOperand());
+		NodeLirTrans expTrs1 = loadGeneric(binaryOp.getSecondOperand());
+		NodeLirTrans expTrs2 = loadGeneric(binaryOp.getFirstOperand());
 		StringBuilder s = new StringBuilder();
 		s.append(expTrs1.codeTrans);
 		s.append(expTrs2.codeTrans);
@@ -587,9 +611,9 @@ public class TranslationVisitor implements Visitor {
 			// TODO : check all expressions have enclosing types
 			if (binaryOp.getFirstOperand().getEnclosingType().equals(TypeTable.stringType)){
 				s.append("Library __stringCat(");
-				s.append(expTrs1.result+",");
-				s.append(expTrs2.result+"),");
-				s.append(expTrs2.result);
+				s.append(expTrs2.result+",");
+				s.append(expTrs1.result+"),");
+				s.append(expTrs2.result + "\r\n");
 				return new NodeLirTrans(s.toString(), expTrs2.result);
 			}
 			else{
@@ -625,11 +649,13 @@ public class TranslationVisitor implements Visitor {
 
 	@Override
 	public Object visit(LogicalBinaryOp binaryOp) {
-		NodeLirTrans expTrs1 = loadGeneric(binaryOp.getFirstOperand());
-		NodeLirTrans expTrs2 = loadGeneric(binaryOp.getSecondOperand());
+		NodeLirTrans expTrs1 = loadGeneric(binaryOp.getSecondOperand());
+		NodeLirTrans expTrs2 = loadGeneric(binaryOp.getFirstOperand(), false);
+		
 		StringBuilder s = new StringBuilder();
 		s.append(expTrs1.codeTrans);
 		s.append(expTrs2.codeTrans);
+		
 		switch(binaryOp.getOperator()){
 		case LAND:
 			s.append("And ");
@@ -681,7 +707,7 @@ public class TranslationVisitor implements Visitor {
 		s.append("_true_" + id + "\r\n");
 		s.append("Move 0," + expTrs2.result + "\r\n");
 		s.append("Jump " + "_end_boolean_" + id + "\r\n");
-		s.append("_true_" + id + ":\r\n"); //if true
+		s.append("_true_" + id + ":\r\n"); // if true
 		s.append("Move 1," + expTrs2.result + "\r\n");	
 		s.append("_end_boolean_" + id + ":\r\n");
 		return new NodeLirTrans(s.toString(), expTrs2.result);

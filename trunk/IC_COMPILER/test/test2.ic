@@ -1,0 +1,39 @@
+class A {
+	int x;
+	int y;
+	
+	static void main(string[] args) {
+		A a = new A();
+		a.y = 5;
+		Library.println("a.foo result: " + Library.itos(a.foo()));
+		Library.println("");
+		a = new B();
+		a.y = 5;
+		Library.println("b.foo result: " + Library.itos(a.foo()));
+	}
+	
+	int foo() {
+		int i = 0;
+		while (i <= y) {
+			Library.println(Library.itos(i));
+			i = i + 1;
+		}
+		
+		return 1;
+	}
+}
+
+class B extends A {
+	int foo() {
+		int i = y;
+		while (i >= 0) {
+			Library.println(Library.itos(i));
+			i = i - 1;
+		}
+		
+		return 0;
+	}
+}
+
+class C extends B {
+}
