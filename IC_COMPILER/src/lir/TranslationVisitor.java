@@ -794,7 +794,7 @@ public class TranslationVisitor implements Visitor {
 		NodeLirTrans expTrs = loadGeneric(unaryOp.getOperand());
 		StringBuilder s = new StringBuilder();
 		s.append(expTrs.codeTrans);
-		s.append("Mul -1,");
+		s.append("Neg ");
 		s.append(expTrs.result + "\r\n");
 		return new NodeLirTrans(s.toString(), expTrs.result);
 	}
@@ -804,7 +804,7 @@ public class TranslationVisitor implements Visitor {
 		NodeLirTrans expTrs = loadGeneric(unaryOp.getOperand());
 		StringBuilder s = new StringBuilder();
 		s.append(expTrs.codeTrans);
-		s.append("Not ");//TODO neg?
+		s.append("Not ");
 		s.append(expTrs.result + "\r\n");
 		return new NodeLirTrans(s.toString(), expTrs.result);
 	}
