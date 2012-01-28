@@ -212,9 +212,9 @@ public class TranslationVisitor implements Visitor {
 		s.append("ArrayLength a,"+register+"\r\n");
 		s.append("Move i,"+register2+"\r\n");
 		s.append("Compare "+register+","+register2+"\r\n");
-		s.append("JumpGE _indexOutOfBound\r\n");//TODO LE or GE?
+		s.append("JumpGE _indexOutOfBound\r\n");
 		s.append("Compare 0,"+register2+"\r\n");
-		s.append("JumpL _indexOutOfBound\r\n");//TODO LE or GE?
+		s.append("JumpL _indexOutOfBound\r\n");
 		s.append("Return 0\r\n");
 		s.append("_indexOutOfBound:\r\n");
 		s.append("Library __println(strArrayAccess),Rdummy\r\n");
