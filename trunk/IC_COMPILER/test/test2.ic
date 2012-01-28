@@ -24,6 +24,8 @@ class A {
 }
 
 class B extends A {
+	boolean z;
+	
 	int foo() {
 		int i = y;
 		while (i >= 0) {
