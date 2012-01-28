@@ -244,7 +244,7 @@ public class TranslationVisitor implements Visitor {
 		lirOutput.append("strNullRef: \"Runtime Error: Null pointer dereference!\"\r\n");
 		lirOutput.append("strArrayAccess: \"Runtime Error: Array index out of bounds!\"\r\n");
 		lirOutput.append("strSize: \"Runtime Error: Array allocation with negative array size!\"\r\n");
-		lirOutput.append("strZero: \"Runtime Error: Runtime Error: Division by zero!\"\r\n");
+		lirOutput.append("strZero: \"Runtime Error: Division by zero!\"\r\n");
 		for (Entry<String, String> stringLiteral : stringLiterals.entrySet()){
 			lirOutput.append(stringLiteral.getValue() + ": " + stringLiteral.getKey() + "\r\n");
 		}
