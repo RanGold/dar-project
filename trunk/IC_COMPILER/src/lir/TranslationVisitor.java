@@ -172,6 +172,57 @@ public class TranslationVisitor implements Visitor {
 		return this.loadGeneric(expression, false);
 	}
 	
+	private String runtimeChecks(){
+		StringBuilder s = new StringBuilder();
+		String register = RegisterPool.getRegister();
+		String register2 = RegisterPool.getRegister();
+		
+		//null pointer dereference
+		s.append("__checkNullRef:\r\n");
+		s.append("Move a,"+register+"\r\n");
+		s.append("Compare 0,"+register+"\r\n");
+		s.append("JumpFalse _notNull\r\n");
+		s.append("Library __println(strNullRef),Rdummy\r\n");
+		s.append("Jump _errorExit\r\n");
+		s.append("_notNull:\r\n");
+		s.append("Return 0\r\n\r\n");
+		
+		//division by zero
+		s.append("__checkZero:\r\n");
+		s.append("Move b,"+register+"\r\n");
+		s.append("Compare 0,"+register+"\r\n");
+		s.append("JumpFalse _notZero\r\n");
+		s.append("Library __println(strZero),Rdummy\r\n");
+		s.append("Jump _errorExit\r\n");
+		s.append("_notZero:\r\n");
+		s.append("Return 0\r\n\r\n");
+		
+		//legal array size
+		s.append("__checkSize:\r\n");
+		s.append("Move n,"+register+"\r\n");
+		s.append("Compare 0,"+register+"\r\n");
+		s.append("JumpGE _okSize\r\n");//TODO LE or GE?
+		s.append("Library __println(strSize),Rdummy\r\n");
+		s.append("Jump _errorExit\r\n");
+		s.append("_okSize:\r\n");
+		s.append("Return 0\r\n\r\n");
+		
+		//legal array size
+		s.append("__checkArrayAccess:\r\n");
+		s.append("ArrayLength a,"+register+"\r\n");
+		s.append("Move i,"+register2+"\r\n");
+		s.append("Compare "+register+","+register2+"\r\n");
+		s.append("JumpGE _indexOutOfBound\r\n");//TODO LE or GE?
+		s.append("Compare 0,"+register2+"\r\n");
+		s.append("JumpL _indexOutOfBound\r\n");//TODO LE or GE?
+		s.append("Return 0\r\n");
+		s.append("_indexOutOfBound:\r\n");
+		s.append("Library __println(strArrayAccess),Rdummy\r\n");
+		s.append("Jump _errorExit\r\n\r\n");
+		
+		return s.toString();
+	}
+	
 	@Override
 	public Object visit(Program program) {
 		program.setClassesOffsets();
@@ -218,6 +269,10 @@ public class TranslationVisitor implements Visitor {
 			lirOutput.append(fieldOffsets.get(classLabel.getKey()));
 		}
 		lirOutput.append("\r\n");
+		
+		//append the runtime checks methods
+		lirOutput.append("# RunTime Checks\r\n");
+		lirOutput.append(runtimeChecks());
 		
 		// appending the blocks of methods
 		lirOutput.append("# Method Blocks\r\n");
@@ -444,6 +499,8 @@ public class TranslationVisitor implements Visitor {
 		if (location.isExternal()){
 			NodeLirTrans expTrs1 = loadGeneric(location.getLocation());
 			s.append(expTrs1.codeTrans);
+			//check null reference
+			s.append("StaticCall __checkNullRef(a="+expTrs1.result+"),Rdummy\r\n");
 			
 			// TODO : check if all expression have enclosingType
 			ICClass classInstance = ((ClassType)location.getLocation().getEnclosingType()).getICClass();
@@ -474,6 +531,10 @@ public class TranslationVisitor implements Visitor {
 		StringBuilder s = new StringBuilder();
 		s.append(expTrs1.codeTrans);
 		s.append(expTrs2.codeTrans);
+		//check null reference
+		s.append("StaticCall __checkNullRef(a="+expTrs1.result+"),Rdummy\r\n");
+		//check array access
+		s.append("StaticCall __checkArrayAccess(a="+expTrs1.result+",i="+expTrs2.result+"),Rdummy\r\n");
 		String arraySymbol = expTrs1.result + "[" + expTrs2.result + "]";
 		return new NodeLirTrans(s.toString(), arraySymbol, ResultType.ArrayLocation);
 	}
@@ -548,6 +609,8 @@ public class TranslationVisitor implements Visitor {
 		} else {
 			NodeLirTrans locTrns = loadGeneric(call.getLocation());
 			sb.append(locTrns.codeTrans);
+			//check null reference
+			sb.append("StaticCall __checkNullRef(a="+locTrns.result+"),Rdummy\r\n");
 			location = locTrns.result;
 			icClass = ((ClassType)call.getLocation().getEnclosingType()).getICClass();
 		}
@@ -589,6 +652,8 @@ public class TranslationVisitor implements Visitor {
 		NodeLirTrans expTrs = loadGeneric(newArray.getSize());
 		StringBuilder s = new StringBuilder();
 		s.append(expTrs.codeTrans);
+		//check null reference
+		s.append("StaticCall __checkSize(n="+expTrs.result+"),Rdummy\r\n");
 		s.append("Library __allocateArray(" + expTrs.result + "),");
 		s.append(expTrs.result + "\r\n");
 		return new NodeLirTrans(s.toString(), expTrs.result);
@@ -597,8 +662,10 @@ public class TranslationVisitor implements Visitor {
 	@Override
 	public Object visit(Length length) {
 		NodeLirTrans expTrs = loadGeneric(length.getArray());
-		StringBuilder s = new StringBuilder();
+		StringBuilder s = new StringBuilder();		
 		s.append(expTrs.codeTrans);
+		//check null reference
+		s.append("StaticCall __checkNullRef(a="+expTrs.result+"),Rdummy\r\n");
 		s.append("ArrayLength ");
 		s.append(expTrs.result + ",");
 		s.append(expTrs.result + "\r\n");
@@ -698,7 +765,7 @@ public class TranslationVisitor implements Visitor {
 			s.append("Compare ");
 			s.append(expTrs1.result+",");
 			s.append(expTrs2.result+"\r\n");
-			s.append("JumpGE ");
+			s.append("JumpGE ");//TODO i think it's the other way around (a<=b -> b GE a), if you intended it this way then never mind
 			break;
 		case EQUAL:
 			s.append("Compare ");
