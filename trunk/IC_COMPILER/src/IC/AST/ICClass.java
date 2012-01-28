@@ -1,6 +1,5 @@
 package IC.AST;
 
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -132,12 +131,8 @@ public class ICClass extends ASTNode {
 		// get fathers fields and methods
 		if (superClass != null) {
 			superClass.copyMyOffset(this.methodToOffset, this.fieldToOffset);
-			Integer[] arr = methodToOffset.values().toArray(new Integer[0]);
-			Arrays.sort(arr);
-			methodCounter = arr[arr.length - 1] + 1;
-			arr = fieldToOffset.values().toArray(new Integer[0]);
-			Arrays.sort(arr);
-			fieldCounter = arr[arr.length - 1] + 1;
+			methodCounter = methodToOffset.values().size();
+			fieldCounter = fieldToOffset.values().size() + 1;
 		}
 		
 		//enter the class fields and methods
