@@ -4,7 +4,6 @@ import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
-
 import lir.TranslationVisitor;
 import IC.AST.ICClass;
 import IC.AST.PrettyPrinter;
@@ -27,8 +26,8 @@ public class Compiler {
 		boolean parse_libic = false, print_ast = false, seen_ICpath = false, dump_symtab = false, print_lir = false;
 		String pathTOlibic = "libic.sig", pathToIC = null;
 
-		if ((args.length == 0) || (args.length > 4)) {
-			System.err.println("Usage: java IC.Compiler <file.ic> [-L</path/to/libic.sig>] [-print-ast] [-dump-symtab]");
+		if ((args.length == 0) || (args.length > 5)) {
+			System.err.println("Usage: java IC.Compiler <file.ic> [-L</path/to/libic.sig>] [-print-ast] [-dump-symtab] [-print-lir]");
 			return;
 		}
 
@@ -67,7 +66,7 @@ public class Compiler {
 				print_lir = true;
 			} else {
 				if (seen_ICpath) {
-					System.err.println("Usage: java IC.Compiler <file.ic> [-L</path/to/libic.sig>] [-print-ast] [-dump-symtab]");
+					System.err.println("Usage: java IC.Compiler <file.ic> [-L</path/to/libic.sig>] [-print-ast] [-dump-symtab] [-print-lir]");
 					return;
 				}
 				seen_ICpath = true;
