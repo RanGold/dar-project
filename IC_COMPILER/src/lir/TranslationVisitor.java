@@ -190,6 +190,10 @@ public class TranslationVisitor implements Visitor {
 		
 		//appending the string literals defined during the run of the visitor
 		lirOutput.append("# String Literals\r\n");
+		lirOutput.append("strNullRef: \"Runtime Error: Null pointer dereference!\"\r\n");
+		lirOutput.append("strArrayAccess: \"Runtime Error: Array index out of bounds!\"\r\n");
+		lirOutput.append("strSize: \"Runtime Error: Array allocation with negative array size!\"\r\n");
+		lirOutput.append("strZero: \"Runtime Error: Runtime Error: Division by zero!\"\r\n");
 		for (Entry<String, String> stringLiteral : stringLiterals.entrySet()){
 			lirOutput.append(stringLiteral.getValue() + ": " + stringLiteral.getKey() + "\r\n");
 		}
@@ -219,6 +223,8 @@ public class TranslationVisitor implements Visitor {
 		lirOutput.append("# Method Blocks\r\n");
 		lirOutput.append(instructions.toString());
 
+		lirOutput.append("_errorExit:");
+		
 		return lirOutput.toString();
 	}
 
@@ -633,6 +639,9 @@ public class TranslationVisitor implements Visitor {
 			s.append(expTrs2.result+"\r\n");
 			return new NodeLirTrans(s.toString(), expTrs2.result);
 		case DIVIDE:
+			//division by zero
+			s.append("StaticCall __checkZero(b="+expTrs2.result+"),Rdummy\r\n");
+			
 			s.append("Div ");
 			s.append(expTrs1.result+",");
 			s.append(expTrs2.result+"\r\n");
