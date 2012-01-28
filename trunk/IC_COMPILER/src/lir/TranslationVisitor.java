@@ -707,7 +707,7 @@ public class TranslationVisitor implements Visitor {
 			return new NodeLirTrans(s.toString(), expTrs2.result);
 		case DIVIDE:
 			//division by zero
-			s.append("StaticCall __checkZero(b="+expTrs2.result+"),Rdummy\r\n");
+			s.append("StaticCall __checkZero(b="+expTrs1.result+"),Rdummy\r\n");
 			
 			s.append("Div ");
 			s.append(expTrs1.result+",");
