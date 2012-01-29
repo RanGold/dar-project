@@ -3,6 +3,11 @@ class A {
 	int y;
 	
 	static void main(string[] args) {
+		string s1 = "abc";
+		string s2 = "def";
+		if ((s1 + s2) == "abcdef") {
+			Library.println("hello");
+		}
 		A a = new A();
 		a.y = 5;
 		Library.println("a.foo result: " + Library.itos(a.foo()));

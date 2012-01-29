@@ -436,7 +436,7 @@ public class TranslationVisitor implements Visitor {
 			NodeLirTrans elseTrans = (NodeLirTrans) ifStatement.getElseOperation().accept(this);
 			s.append(elseTrans.codeTrans);
 		}
-		s.append("end_if_" + id + ":\r\n");
+		s.append("_end_if_" + id + ":\r\n");
 		return new NodeLirTrans(s.toString());
 	}
 
