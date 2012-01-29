@@ -768,6 +768,7 @@ public class TranslationVisitor implements Visitor {
 			s.append("JumpGE ");//TODO i think it's the other way around (a<=b -> b GE a), if you intended it this way then never mind
 			break;
 		case EQUAL:
+			// TODO : maybe add special attention to strings
 			s.append("Compare ");
 			s.append(expTrs1.result+",");
 			s.append(expTrs2.result+"\r\n");
