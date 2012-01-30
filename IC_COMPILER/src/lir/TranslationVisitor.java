@@ -654,7 +654,10 @@ public class TranslationVisitor implements Visitor {
 		s.append(expTrs.codeTrans);
 		//check null reference
 		s.append("StaticCall __checkSize(n="+expTrs.result+"),Rdummy\r\n");
-		s.append("Library __allocateArray(" + expTrs.result + "),");
+		String sizeTimes4 = RegisterPool.getRegister();
+		s.append("Move "+expTrs.result+","+sizeTimes4+"\r\n");
+		s.append("Mul 4,"+sizeTimes4+"\r\n");
+		s.append("Library __allocateArray(" + sizeTimes4 + "),");
 		s.append(expTrs.result + "\r\n");
 		return new NodeLirTrans(s.toString(), expTrs.result);
 	}
@@ -769,6 +772,7 @@ public class TranslationVisitor implements Visitor {
 			break;
 		case EQUAL:
 			// TODO : maybe add special attention to strings
+			
 			s.append("Compare ");
 			s.append(expTrs1.result+",");
 			s.append(expTrs2.result+"\r\n");
