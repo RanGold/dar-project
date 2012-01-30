@@ -207,7 +207,7 @@ public class TranslationVisitor implements Visitor {
 		s.append("_okSize:\r\n");
 		s.append("Return 0\r\n\r\n");
 		
-		//legal array size
+		//legal array access
 		s.append("__checkArrayAccess:\r\n");
 		s.append("ArrayLength a,"+register+"\r\n");
 		s.append("Move i,"+register2+"\r\n");
@@ -684,7 +684,6 @@ public class TranslationVisitor implements Visitor {
 		s.append(expTrs2.codeTrans);
 		switch(binaryOp.getOperator()){
 		case PLUS:
-			// TODO : check all expressions have enclosing types
 			if (binaryOp.getFirstOperand().getEnclosingType().equals(TypeTable.stringType)){
 				s.append("Library __stringCat(");
 				s.append(expTrs2.result+",");
@@ -769,10 +768,9 @@ public class TranslationVisitor implements Visitor {
 			s.append(expTrs1.result+",");
 			s.append(expTrs2.result+"\r\n");
 			s.append("JumpGE ");//TODO i think it's the other way around (a<=b -> b GE a), if you intended it this way then never mind
+			// TODO answer: they are all reversed, look at the expTrs1, expTrs2 init
 			break;
 		case EQUAL:
-			// TODO : maybe add special attention to strings
-			
 			s.append("Compare ");
 			s.append(expTrs1.result+",");
 			s.append(expTrs2.result+"\r\n");
