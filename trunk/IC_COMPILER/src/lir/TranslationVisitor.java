@@ -735,7 +735,7 @@ public class TranslationVisitor implements Visitor {
 		s.append(expTrs2.codeTrans);
 		
 		switch(binaryOp.getOperator()){
-		case LAND: //TODO - id a && b and a==false dont need to calc b!
+		case LAND: //TODO - id a && b and a==false dont need to calc b! same for ||
 			s.append("And ");
 			s.append(expTrs1.result+",");
 			s.append(expTrs2.result+"\r\n");
@@ -785,7 +785,7 @@ public class TranslationVisitor implements Visitor {
 		int id = getNextId();
 		s.append("_true_" + id + "\r\n");
 		s.append("Move 0," + expTrs2.result + "\r\n");
-		s.append("Jump " + "_end_boolean_" + id + "\r\n");
+		s.append("Jump _end_boolean_" + id + "\r\n");
 		s.append("_true_" + id + ":\r\n"); // if true
 		s.append("Move 1," + expTrs2.result + "\r\n");	
 		s.append("_end_boolean_" + id + ":\r\n");
