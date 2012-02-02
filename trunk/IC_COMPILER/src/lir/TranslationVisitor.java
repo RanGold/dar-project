@@ -632,7 +632,7 @@ public class TranslationVisitor implements Visitor {
 
 	@Override
 	public Object visit(This thisExpression) {
-		return new NodeLirTrans("", "this");
+		return new NodeLirTrans("", "this", ResultType.Mem);
 	}
 
 	@Override
