@@ -80,7 +80,7 @@ public class TranslationVisitor implements Visitor {
 	 * @param key - the string literal (i.e. "daniel")
 	 * @return the label if exist, or new label if it doesn't already exist
 	 */
-	private String getStringLiteralName(String key) {//TODO verify "" before string literals
+	private String getStringLiteralName(String key) {
 		String value = stringLiterals.get(key);
 		//entry does not exist
 		if (value == null){
@@ -201,7 +201,7 @@ public class TranslationVisitor implements Visitor {
 		s.append("__checkSize:\r\n");
 		s.append("Move n,"+register+"\r\n");
 		s.append("Compare 0,"+register+"\r\n");
-		s.append("JumpGE _okSize\r\n");//TODO LE or GE?
+		s.append("JumpGE _okSize\r\n");
 		s.append("Library __println(strSize),Rdummy\r\n");
 		s.append("Jump _errorExit\r\n");
 		s.append("_okSize:\r\n");
@@ -287,7 +287,7 @@ public class TranslationVisitor implements Visitor {
 	public Object visit(ICClass icClass) {
 		StringBuilder classInstructions = new StringBuilder();
 	
-		if (!icClass.getName().equals("Library")){//TODO should we avoid library?
+		if (!icClass.getName().equals("Library")){
 			String[] methodLables = new String[icClass.getMethodsOffsets().size()];
 			for (Entry<String, Integer> method : icClass.getMethodsOffsets().entrySet()){
 				//building the dispatch table
@@ -502,7 +502,6 @@ public class TranslationVisitor implements Visitor {
 			//check null reference
 			s.append("StaticCall __checkNullRef(a="+expTrs1.result+"),Rdummy\r\n");
 			
-			// TODO : check if all expression have enclosingType
 			ICClass classInstance = ((ClassType)location.getLocation().getEnclosingType()).getICClass();
 			int varLocationNum = classInstance.getFieldOffset(location.getName()); 
 			String fieldId = expTrs1.result + "." + varLocationNum;
@@ -731,39 +730,52 @@ public class TranslationVisitor implements Visitor {
 		NodeLirTrans expTrs2 = loadGeneric(binaryOp.getFirstOperand(), false);
 		
 		StringBuilder s = new StringBuilder();
-		s.append(expTrs1.codeTrans);
+		int id = getNextId();
 		s.append(expTrs2.codeTrans);
 		
 		switch(binaryOp.getOperator()){
 		case LAND: //TODO - id a && b and a==false dont need to calc b! same for ||
-			s.append("And ");
-			s.append(expTrs1.result+",");
-			s.append(expTrs2.result+"\r\n");
-			return new NodeLirTrans(s.toString(), expTrs2.result);
+			s.append("Compare 0,");
+			s.append(expTrs2.result + "\r\n");
+			s.append("JumpTrue _false_" + id + "\r\n");
+			s.append(expTrs1.codeTrans);
+			s.append("Compare 1,");
+			s.append(expTrs1.result + "\r\n");
+			s.append("JumpTrue ");
+			break;
 		case LOR:
-			s.append("Or ");
-			s.append(expTrs1.result+",");
-			s.append(expTrs2.result+"\r\n");
-			return new NodeLirTrans(s.toString(), expTrs2.result);
+			s.append(expTrs2.codeTrans);
+			s.append("Compare 1,");
+			s.append(expTrs2.result + "\r\n");
+			s.append("JumpTrue _true_" + id + "\r\n");
+			s.append(expTrs1.codeTrans);
+			s.append("Compare 1,");
+			s.append(expTrs1.result + "\r\n");
+			s.append("JumpTrue ");
+			break;
 		case LT:
+			s.append(expTrs1.codeTrans);
 			s.append("Compare ");
 			s.append(expTrs1.result+",");
 			s.append(expTrs2.result+"\r\n");
 			s.append("JumpL ");
 			break;
 		case LTE:
+			s.append(expTrs1.codeTrans);
 			s.append("Compare ");
 			s.append(expTrs1.result+",");
 			s.append(expTrs2.result+"\r\n");
 			s.append("JumpLE ");
 			break;
 		case GT:
+			s.append(expTrs1.codeTrans);
 			s.append("Compare ");
 			s.append(expTrs1.result+",");
 			s.append(expTrs2.result+"\r\n");
 			s.append("JumpG ");
 			break;
 		case GTE:
+			s.append(expTrs1.codeTrans);
 			s.append("Compare ");
 			s.append(expTrs1.result+",");
 			s.append(expTrs2.result+"\r\n");
@@ -771,19 +783,22 @@ public class TranslationVisitor implements Visitor {
 			// TODO answer: they are all reversed, look at the expTrs1, expTrs2 init
 			break;
 		case EQUAL:
+			s.append(expTrs1.codeTrans);
 			s.append("Compare ");
 			s.append(expTrs1.result+",");
 			s.append(expTrs2.result+"\r\n");
 			s.append("JumpTrue ");
 			break;
 		case NEQUAL:
+			s.append(expTrs1.codeTrans);
 			s.append("Compare ");
 			s.append(expTrs1.result+",");
 			s.append(expTrs2.result+"\r\n");
 			s.append("JumpFalse ");
 		}
-		int id = getNextId();
+		
 		s.append("_true_" + id + "\r\n");
+		s.append("_false_" + id + ":\r\n");
 		s.append("Move 0," + expTrs2.result + "\r\n");
 		s.append("Jump _end_boolean_" + id + "\r\n");
 		s.append("_true_" + id + ":\r\n"); // if true
@@ -823,7 +838,6 @@ public class TranslationVisitor implements Visitor {
 			literalIdentifier = literal.getValue().toString();
 			break;
 		case NULL:
-			// TODO : ?
 			literalIdentifier = "0";
 			break;
 		case STRING:
