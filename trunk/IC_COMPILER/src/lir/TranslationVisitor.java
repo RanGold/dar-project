@@ -734,7 +734,7 @@ public class TranslationVisitor implements Visitor {
 		s.append(expTrs2.codeTrans);
 		
 		switch(binaryOp.getOperator()){
-		case LAND: //TODO - id a && b and a==false dont need to calc b! same for ||
+		case LAND:
 			s.append("Compare 0,");
 			s.append(expTrs2.result + "\r\n");
 			s.append("JumpTrue _false_" + id + "\r\n");
