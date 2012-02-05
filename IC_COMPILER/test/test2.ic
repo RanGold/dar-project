@@ -8,6 +8,7 @@ class A {
 		if ((s1 + s2) == "abcdef") {
 			Library.println("hello");
 		}
+		int[] arr = new int[1];
 		A a = new A();
 		a.y = 5;
 		Library.println("a.foo result: " + Library.itos(a.foo()));
@@ -15,6 +16,15 @@ class A {
 		a = new B();
 		a.y = 5;
 		Library.println("b.foo result: " + Library.itos(a.foo()));
+		
+		a = null;
+		if (a == null || a.y == 1) {
+			Library.println("Or short");
+		}
+		
+		if (!(a != null && a.y == 1)) {
+			Library.println("And short");
+		} 
 	}
 	
 	int foo() {
