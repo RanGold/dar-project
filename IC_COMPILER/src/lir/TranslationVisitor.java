@@ -631,9 +631,7 @@ public class TranslationVisitor implements Visitor {
 
 	@Override
 	public Object visit(This thisExpression) {
-		String reg = RegisterPool.getRegister();
-		String tr = "Move this," + reg + "\n";                  
-		return new NodeLirTrans(tr, reg);
+		return new NodeLirTrans("", "this", ResultType.Mem);
 	}
 
 	@Override
@@ -721,7 +719,7 @@ public class TranslationVisitor implements Visitor {
 			s.append(expTrs1.result+",");
 			s.append(expTrs2.result+"\r\n");
 			return new NodeLirTrans(s.toString(), expTrs2.result);
-		default: 
+		default:
 			return null;
 		}
 	}
