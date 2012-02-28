@@ -858,7 +858,7 @@ public class TranslationVisitor implements Visitor {
 
 	@Override
 	public Object visit(ExpressionBlock expressionBlock) {
-		return expressionBlock.getExpression().accept(this);
+		return loadGeneric(expressionBlock.getExpression());
 	}
 
 }
